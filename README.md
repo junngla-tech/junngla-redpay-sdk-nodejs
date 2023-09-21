@@ -8,6 +8,8 @@ Esté set de funciones permiten controlar la integridad de los datos enviados o 
 
 ### generateSignature(input: object, secret: string): string
 
+Permite generar la firma de un objeto.
+
 Parámetros de entrada entrada:
 - input: el objeto para el cual desean generar una firma
 - secret: el secreto a utilizar para firmar el objeto
@@ -18,7 +20,7 @@ Valor de retorno:
 **Ejemplo:**
 
 ```typescript
-import generateSignature from 'junngla-redpay-sdk-nodejs';
+import { generateSignature } from 'redpay-sdk-nodejs';
 
 const signature = generateSignature({
     "hello": "world"
@@ -30,6 +32,8 @@ console.log(signature);
 
 ### validateSignature(input: object, secret: string): boolean
 
+Permite validar la firma de un objeto.
+
 Parámetros de entrada entrada:
 - input: el objeto para el cual desea validar la firma
 - secret: el secreto a utilizar para firmar el objeto
@@ -40,7 +44,7 @@ Valor de retorno:
 **Ejemplo:**
 
 ```typescript
-import validateSignature from 'junngla-redpay-sdk-nodejs';
+import { validateSignature } from 'redpay-sdk-nodejs';
 
 const isSignatureValid = validateSignature({
     "hello": "world",
@@ -53,6 +57,8 @@ console.log(isSignatureValid);
 
 ### getSignedObject(input: object, secret: string): object
 
+Permite generar un objeto firmado.
+
 Parámetros de entrada entrada:
 - input: el objeto para el cual desea sumarle la firma
 - secret: el secreto a utilizar para firmar el objeto
@@ -63,7 +69,7 @@ Valor de retorno:
 **Ejemplo:**
 
 ```typescript
-import getSignedObject from 'junngla-redpay-sdk-nodejs';
+import { getSignedObject } from 'redpay-sdk-nodejs';
 
 const signedObject = getSignedObject({
     "hello": "world",
