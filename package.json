@@ -1,0 +1,52 @@
+{
+  "name": "junngla-redpay-sdk-nodejs",
+  "version": "1.0.0",
+  "description": "A TLV string converter to JSON object",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "mocha",
+    "lint": "eslint . --ext .ts",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test",
+    "version": "git add -A src",
+    "postversion": "git push && git push --tags",
+    "push": "npm version patch && git push",
+    "push-minor": "npm version minor && git push",
+    "push-major": "npm version major && git push"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/junngla-tech/junngla-redpay-sdk-nodejs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/junngla-tech/junngla-redpay-sdk-nodejs/issues"
+  },
+  "homepage": "https://github.com/junngla-tech/junngla-redpay-sdk-nodejs#readme",
+  "keywords": [
+    "redpay",
+    "sdk"
+  ],
+  "author": "Junngla SPA Chile @junngla-tech",
+  "license": "GNU",
+  "dependencies": {
+    "axios": "^1.5.0",
+    "crc": "^4.3.2",
+    "crypto": "^1.0.1",
+    "jsonabc": "^2.3.1"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/jsonabc": "^2.3.1",
+    "@types/node": "^20.6.1",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0",
+    "eslint": "^8.49.0",
+    "mocha": "^10.2.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  },
+  "files": [
+    "dist/**/*"
+  ]
+}
