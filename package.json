@@ -2,6 +2,7 @@
   "name": "redpay-sdk-nodejs",
   "version": "1.0.1",
   "description": "SDK NodeJS para integración con el servicio de Token de pago interoperable de RedPay",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
@@ -32,8 +33,6 @@
   "author": "Junngla SPA Chile @junngla-tech",
   "license": "GNU",
   "dependencies": {
-    "axios": "^1.5.0",
-    "crc": "^4.3.2",
     "crypto": "^1.0.1",
     "jsonabc": "^2.3.1"
   },
