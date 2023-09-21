@@ -3,8 +3,18 @@ import * as jsonabc from 'jsonabc';
 import { BinaryLike } from 'crypto';
 
 /**
- * @IntegrityService Se encarga de la encriptacion, desencriptacion, generar y validar signature.
+ * @IntegrityService Se encarga de generar y validar signature.
  */
+
+export interface SignedObject {
+  signature: string;
+
+  // Keys can be strings, numbers, or symbols.
+  // If you know it to be strings only, you can also restrict it to that.
+  // For the value you can use any or unknown,
+  // with unknown being the more defensive approach.
+  [x: string | number | symbol]: unknown;
+}
 
 /**
  * Funcion que procesa la data dada en sus parametros para generar un signature valido.
@@ -60,7 +70,7 @@ export const generateSignature = (
 export const getSignedObject = <T>(
   object: T,
   secret: BinaryLike,
-): T & { signature: string } => {
+): T & SignedObject => {
   return {
     ...object,
     signature: generateSignature(JSON.parse(JSON.stringify(object)), secret),
@@ -74,7 +84,7 @@ export const getSignedObject = <T>(
  * @param secret Este paraemtro recibe el secreto con el que se quiere generar el signature.
  * @returns
  */
-export const validateSignature = (subject: { signature: string }, secret: string) => {
+export const validateSignature = (subject: SignedObject, secret: string) => {
   const hash = generateSignature(subject, secret as BinaryLike);
 
   return hash === subject.signature;
