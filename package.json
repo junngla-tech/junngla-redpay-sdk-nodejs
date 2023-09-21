@@ -1,7 +1,7 @@
 {
   "name": "junngla-redpay-sdk-nodejs",
   "version": "1.0.0",
-  "description": "A TLV string converter to JSON object",
+  "description": "SDK NodeJS para integración con el servicio de Token de pago interoperable de RedPay",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
@@ -25,7 +25,9 @@
   "homepage": "https://github.com/junngla-tech/junngla-redpay-sdk-nodejs#readme",
   "keywords": [
     "redpay",
-    "sdk"
+    "sdk",
+    "token de pago",
+    "interoperabilidad"
   ],
   "author": "Junngla SPA Chile @junngla-tech",
   "license": "GNU",
