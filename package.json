@@ -1,5 +1,5 @@
 {
-  "name": "junngla-redpay-sdk-nodejs",
+  "name": "redpay-sdk-nodejs",
   "version": "1.0.0",
   "description": "SDK NodeJS para integración con el servicio de Token de pago interoperable de RedPay",
   "types": "dist/index.d.ts",
