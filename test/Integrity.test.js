@@ -43,4 +43,14 @@ describe('Integrity tests', () => {
             "signature": "ba1cf4f1a0d5659a4c7dd8c70f74788a532c644c65eeb3d46d9e56cdb22eaeaa"
         });
     });
+
+    it('Integrity.getSignedObjectWithUndefined', () => {
+
+        const signedObject = Integrity.getSignedObject({
+            "hello": "world",
+            "prueba": undefined,
+        }, 'f441bb4d-9cd3-410a-8ede-cefd33cf3fa0')
+
+        assert.equal(signedObject.signature, "ba1cf4f1a0d5659a4c7dd8c70f74788a532c644c65eeb3d46d9e56cdb22eaeaa");
+    });
 });
