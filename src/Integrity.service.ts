@@ -46,6 +46,9 @@ export const generateSignature = (
   secret: BinaryLike,
 ): string => {
 
+  // Limpiamos el objeto de sus atributos undefined
+  object = JSON.parse(JSON.stringify(object));
+
   // Ordenamos los atributos del objeto
   object = jsonabc.sortObj(object);
 
@@ -73,7 +76,7 @@ export const getSignedObject = <T>(
 ): T & SignedObject => {
   return {
     ...object,
-    signature: generateSignature(JSON.parse(JSON.stringify(object)), secret),
+    signature: generateSignature(object as object, secret),
   };
 };
 
