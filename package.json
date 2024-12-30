@@ -34,6 +34,9 @@
   "author": "Junngla SPA Chile @junngla-tech",
   "license": "GNU",
   "dependencies": {
+    "reflect-metadata": "^0.1.13",
+    "axios": "^1.7.9",
+    "class-transformer": "^0.5.1",
     "crypto": "^1.0.1",
     "jsonabc": "^2.3.1"
   },
