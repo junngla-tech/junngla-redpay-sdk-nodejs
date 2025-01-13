@@ -22,7 +22,7 @@ export enum AccountUser {
  * - `CORRIENTE`: Representa una cuenta corriente.
  * - `VISTA`: Representa una cuenta vista.
  */
-export enum AccountFiller {
+export enum AccountAuthorization {
   /**
    * Representa una cuenta corriente.
    */

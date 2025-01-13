@@ -1,28 +1,15 @@
-import { Filler } from "../model";
+import { SignedAuthorizationAccount } from "../model";
 
-interface IFillerData {
-  filler: Filler;
-}
-
-export interface IAmount extends IFillerData {
-  amount: number;
-  max_amount?: never;
-}
-
-export interface IMaxAmount extends IFillerData {
-  amount?: never;
-  max_amount: number;
-}
-
-export interface IAuthorizeResponse {
+export interface IAuthorizeAPIResponse {
   token_uuid: string;
   operations: IOperations;
   is_med: boolean;
   timestamp: string;
-  filler: Filler;
-  settlement: ISettlement;
+  filler: SignedAuthorizationAccount;
+  settlement?: ISettlement;
   operation_uuid: string;
   signature: string;
+  collector_id?: string;
 }
 
 interface IOperations {
