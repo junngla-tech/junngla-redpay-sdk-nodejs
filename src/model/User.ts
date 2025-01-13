@@ -1,29 +1,79 @@
-import "reflect-metadata";
-import { Expose, Type } from "class-transformer";
-import { ScheduleMode, UserType } from "../enum";
+import {
+  Exclude,
+  Expose,
+  plainToInstance,
+  Transform,
+  TransformFnParams,
+  Type,
+} from "class-transformer";
 import {
   IGeo,
   ISettlement,
   ISettlementSchedule,
   IUserAccount,
+  IWithdrawal,
 } from "../interface";
-import { AccountId, SbifCode } from "../types";
+import { SbifCode, AccountId } from "../types";
+import { ScheduleMode, UserType, WithdrawalMode } from "../enum";
+import { ClassBase } from "./ClassBase";
+
+const transformWithdrawal = ({
+  value,
+  obj,
+}: TransformFnParams): Withdrawal | undefined => {
+  if (obj.settlement) {
+    const predefinedMode = Object.entries(predefinedSchedules).find(
+      ([, schedule]) =>
+        schedule &&
+        schedule.schedule.mode === obj.settlement.schedule.mode &&
+        JSON.stringify(schedule.schedule.value) ===
+          JSON.stringify(obj.settlement.schedule.value)
+    );
+
+    return predefinedMode
+      ? new Withdrawal({ mode: predefinedMode[0] as WithdrawalMode })
+      : new Withdrawal({
+          mode: WithdrawalMode.MANUAL,
+          settlement: new Settlement({
+            schedule: obj.settlement.schedule,
+          }),
+        });
+  }
+  return value;
+};
 
 /**
  * Representa la información de una cuenta de usuario.
  */
-class UserAccount implements IUserAccount {
+export class UserAccount
+  extends ClassBase<UserAccount>
+  implements IUserAccount
+{
   /**
    * Identificador único de la cuenta.
    */
-  @Expose()
-  id!: string;
+  @Expose({ toClassOnly: true })
+  @Exclude({ toPlainOnly: true })
+  @Transform(({ value, obj }) => +obj.id || value, { toClassOnly: true })
+  number!: number;
+
+  @Expose({ toPlainOnly: true })
+  @Exclude({ toClassOnly: true })
+  @Transform(({ obj }) => obj.number?.toString(), { toPlainOnly: true })
+  private id!: string;
 
   /**
    * Código SBIF del banco propietario.
    */
-  @Expose()
-  owner_id!: SbifCode;
+  @Expose({ toClassOnly: true })
+  @Exclude({ toPlainOnly: true })
+  @Transform(({ value, obj }) => obj.owner_id || value, { toClassOnly: true })
+  sbif_code!: SbifCode;
+
+  @Expose({ toPlainOnly: true })
+  @Exclude({ toClassOnly: true })
+  @Transform(({ obj }) => obj.sbif_code, { toPlainOnly: true })
+  private owner_id!: SbifCode;
 
   /**
    * Tipo de cuenta, representado por `AccountId`.
@@ -41,7 +91,7 @@ class UserAccount implements IUserAccount {
 /**
  * Representa las coordenadas geográficas de un usuario.
  */
-class Geo implements IGeo {
+export class Geo extends ClassBase<Geo> implements IGeo {
   /**
    * Latitud.
    */
@@ -58,7 +108,10 @@ class Geo implements IGeo {
 /**
  * Representa un horario de liquidación para un usuario recaudador.
  */
-class SettlementSchedule implements ISettlementSchedule {
+export class SettlementSchedule
+  extends ClassBase<SettlementSchedule>
+  implements ISettlementSchedule
+{
   /**
    * Modo de programación, como días de la semana o días del mes.
    */
@@ -75,7 +128,7 @@ class SettlementSchedule implements ISettlementSchedule {
 /**
  * Representa la configuración de liquidación para un usuario recaudador.
  */
-class Settlement implements ISettlement {
+export class Settlement extends ClassBase<Settlement> implements ISettlement {
   /**
    * Programación de liquidación asociada.
    */
@@ -84,15 +137,49 @@ class Settlement implements ISettlement {
   schedule!: SettlementSchedule;
 }
 
+export class Withdrawal extends ClassBase<Withdrawal> implements IWithdrawal {
+  /**
+   * Modo de retiro de fondos.
+   * `DAILY` - Todos los días.
+   * `BIWEEKLY` - Cada dos semanas (quincenal).
+   * `MONTHLY` - Mensual.
+   * `MANUAL` - Configuración manual.
+   */
+  @Expose()
+  mode!: WithdrawalMode;
+
+  /**
+   * Configuración personalizada de liquidación (opcional).
+   * Es requerido si `mode` es `manual`.
+   */
+  @Expose()
+  @Type(() => Settlement)
+  settlement?: Settlement;
+}
+
 /**
  * Clase base abstracta para usuarios.
  */
-abstract class UserBase {
+abstract class UserBase extends ClassBase<UserBase> {
   /**
    * Identificador del enrolador asociado al usuario.
+   * Esta propiedad se expone cuando se instancia un objeto.
    */
-  @Expose()
-  enroller_user_id!: string;
+  @Expose({ toClassOnly: true })
+  @Exclude({ toPlainOnly: true })
+  @Transform(({ value, obj }) => obj.enroller_user_id || value, {
+    toClassOnly: true,
+  })
+  user_id!: string;
+
+  /**
+   * Identificador del enrolador en formato de objeto plano.
+   * Esta propiedad se expone cuando se transforma a un objeto plano.
+   */
+  @Expose({ toPlainOnly: true })
+  @Exclude({ toClassOnly: true })
+  @Transform(({ obj }) => obj.user_id, { toPlainOnly: true })
+  private enroller_user_id!: string;
 
   /**
    * Información de la cuenta bancaria asociada al usuario.
@@ -119,16 +206,16 @@ abstract class UserBase {
   @Expose()
   tax_id!: string;
 
-  /**
-   * Tipo de usuario, definido en las subclases concretas.
-   */
-  abstract get user_type(): UserType;
+  @Expose({ toPlainOnly: true })
+  get user_type(): string {
+    throw new Error("user_type getter must be implemented in derived classes");
+  }
 }
 
 /**
  * Representa un usuario recaudador (collector).
  */
-class UserCollector extends UserBase {
+export class UserCollectorRequest extends UserBase {
   /**
    * Dirección tributaria del recaudador.
    */
@@ -149,25 +236,46 @@ class UserCollector extends UserBase {
   geo!: Geo;
 
   /**
-   * Configuración de liquidación del recaudador.
+   * Configuración de retiro de fondos del recaudador. Solo visible en instancias.
    */
-  @Expose()
-  @Type(() => Settlement)
-  settlement!: Settlement;
+  @Expose({ toClassOnly: true })
+  @Exclude({ toPlainOnly: true })
+  @Type(() => Withdrawal)
+  @Transform(transformWithdrawal, { toClassOnly: true })
+  withdrawal!: Withdrawal;
+
+  /**
+   * Configuración de liquidación del recaudador. Solo visible en objetos planos.
+   */
+  @Expose({ toPlainOnly: true })
+  @Exclude({ toClassOnly: true })
+  @Transform(
+    ({ obj }) => {
+      const mode = obj.withdrawal?.mode as WithdrawalMode;
+      return predefinedSchedules[mode] ?? obj.withdrawal?.settlement;
+    },
+    { toPlainOnly: true }
+  )
+  private settlement!: Settlement;
 
   /**
    * Tipo de usuario: siempre `collector` para esta clase.
    */
-  @Expose()
-  get user_type(): UserType {
+  @Expose({ toPlainOnly: true })
+  @Transform(() => UserType.COLLECTOR)
+  get user_type(): string {
     return UserType.COLLECTOR;
+  }
+
+  constructor(data?: Partial<UserCollectorRequest> | string) {
+    super(data);
   }
 }
 
 /**
  * Representa un usuario pagador (payer).
  */
-class UserPayer extends UserBase {
+export class UserPayerRequest extends UserBase {
   /**
    * Información geográfica del pagador (opcional).
    */
@@ -178,18 +286,104 @@ class UserPayer extends UserBase {
   /**
    * Tipo de usuario: siempre `payer` para esta clase.
    */
-  @Expose()
-  get user_type(): UserType {
+  @Expose({ toPlainOnly: true })
+  @Transform(() => UserType.PAYER)
+  get user_type(): string {
     return UserType.PAYER;
+  }
+
+  constructor(data?: Partial<UserPayerRequest> | string) {
+    super(data);
   }
 }
 
-export {
-  UserBase,
-  UserCollector,
-  UserPayer,
-  Settlement,
-  SettlementSchedule,
-  UserAccount,
-  Geo,
+export class UserReponse extends ClassBase<UserReponse> {
+  @Expose()
+  @Exclude({ toPlainOnly: true })
+  @Transform(({ obj }) => obj.enroller_user_id)
+  readonly user_id!: string;
+
+  @Exclude()
+  private readonly enroller_user_id!: string;
+
+  @Expose()
+  readonly name!: string;
+
+  @Expose()
+  readonly email!: string;
+
+  @Expose()
+  readonly user_type!: UserType;
+
+  @Expose()
+  readonly tax_id!: string;
+
+  @Expose()
+  readonly tax_address?: string;
+
+  @Expose()
+  readonly gloss?: string;
+
+  @Expose()
+  readonly geo?: Geo;
+
+  @Expose()
+  readonly account!: UserAccount;
+
+  @Expose()
+  readonly required_activation?: boolean;
+
+  @Exclude()
+  private readonly settlement!: string;
+
+  /**
+   * Configuración de retiro de fondos del recaudador. Solo visible en instancias.
+   */
+  @Expose()
+  @Exclude({ toPlainOnly: true })
+  @Type(() => Withdrawal)
+  @Transform(transformWithdrawal, { toClassOnly: true })
+  withdrawal?: Withdrawal;
+
+  constructor(data?: Partial<UserReponse>) {
+    super(data);
+  }
+}
+
+export class GenerateUserResponse extends ClassBase<GenerateUserResponse> {
+  @Expose()
+  @Transform(({ obj }) => plainToInstance(UserReponse, obj.user))
+  @Type(() => UserReponse)
+  user!: UserReponse;
+
+  @Expose()
+  operation_uuid!: string;
+
+  @Expose()
+  signature!: string;
+}
+
+/**
+ * Programaciones predefinidas de liquidación.
+ */
+const predefinedSchedules: Record<WithdrawalMode, Settlement | null> = {
+  [WithdrawalMode.DAILY]: new Settlement({
+    schedule: new SettlementSchedule({
+      mode: ScheduleMode.DAYS_OF_WEEK,
+      value: [1, 2, 3, 4, 5],
+    }),
+  }),
+  [WithdrawalMode.BIWEEKLY]: new Settlement({
+    schedule: new SettlementSchedule({
+      mode: ScheduleMode.DAYS_OF_MONTH,
+      value: [1, 15],
+    }),
+  }),
+  [WithdrawalMode.MONTHLY]: new Settlement({
+    schedule: new SettlementSchedule({
+      mode: ScheduleMode.DAYS_OF_MONTH,
+      value: [1],
+    }),
+  }),
+  [WithdrawalMode.MANUAL]: null,
 };

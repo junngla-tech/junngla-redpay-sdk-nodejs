@@ -1,9 +1,10 @@
-import { ScheduleMode, UserType } from "../enum";
+import { ScheduleMode, UserType, WithdrawalMode } from "../enum";
+import { UserCollectorRequest, UserPayerRequest } from "../model";
 import { AccountId, SbifCode } from "../types";
 
 export interface IUserAccount {
-  id: string;
-  owner_id: SbifCode;
+  number: number;
+  sbif_code: SbifCode;
   type: AccountId;
   tax_id: string;
 }
@@ -22,6 +23,11 @@ export interface ISettlement {
   schedule: ISettlementSchedule;
 }
 
+export interface IWithdrawal {
+  mode: WithdrawalMode;
+  settlement?: ISettlement;
+}
+
 export interface IUserBase {
   enroller_user_id: string;
   name: string;
@@ -36,18 +42,30 @@ export interface IUserCollector extends IUserBase {
   gloss: string;
   geo: IGeo;
   settlement: ISettlement;
+  closed_loop?: boolean;
 }
 
-export interface IUserCollectorResponse extends IUserCollector {
-  required_activation: boolean;
-  closed_loop: boolean;
+export interface IUserCollectorAPIResponse {
+  user: IUserCollector & { required_activation: boolean };
+  operation_uuid: string;
+  signature: string;
 }
 
 export interface IUserPayer extends IUserBase {
   user_type: UserType.PAYER;
   geo?: IGeo;
+  closed_loop?: boolean;
 }
 
-export interface IUserPayerResponse extends IUserPayer {
-  closed_loop: boolean;
+export interface IUserPayerAPIResponse {
+  user: IUserPayer;
+  operation_uuid: string;
+  signature: string;
 }
+
+export interface IUserResponse {
+  user: UserCollectorRequest | UserPayerRequest;
+  operation_uuid: string;
+  signature: string;
+}
+
