@@ -5,17 +5,30 @@ RedPay SDK NodeJS es una biblioteca diseñada para facilitar la integración con
 # Tabla de Contenidos
 
 1. [Instalación](#instalación)
-2. [Configuración inicial](#configuración-inicial)
-3. [RedPayClient: Gestión de Peticiones HTTP](#redpayclient-gestión-de-peticiones-http)
-4. [Servicios Disponibles](#servicios-disponibles)
-    - [RedPayERService (Enrolador Recaudador)](#redpayer-service-enrolador-recaudador)
-    - [RedPayEPService (Enrolador Pagador)](#redpayep-service-enrolador-pagador)
-5. [Gestión de Tokens](#gestión-de-tokens)
-6. [Fillers](#fillers)
-7. [Control de integridad](#control-de-integridad)
-    - [generateSignature(input: object, secret: string): string](#generatesignatureinput-object-secret-string-string)
-    - [validateSignature(input: object, secret: string): boolean](#validatesignatureinput-object-secret-string-boolean)
-    - [getSignedObject(input: object, secret: string): object](#getsignedobjectinput-object-secret-string-object)
+2. [RedPayClient: Gestión de Peticiones HTTP](#redpayclient-gestión-de-peticiones-http)
+3. [Enrolador Recaudador](#enrolador-recaudador)
+   - [Configuración inicial](#configuración-inicial)
+   - [RedPayService](#redpayservice)
+     - [Métodos generales](#métodos-generales)
+     - [Métodos específicos](#métodos-específicos)
+     - [Gestión de Tokens](#gestión-de-tokens)
+     - [Validación de token (opcional)](#validación-de-token-opcional)
+     - [Validación de autorización](#validación-de-autorización)
+     - [Detalles de la devolución](#detalles-de-la-devolución)
+4. [Enrolador Pagador (billetera digital)](#enrolador-pagador-billetera-digital)
+   - [Configuración inicial](#configuración-inicial-1)
+   - [RedPayService (Enrolador Pagador)](#redpayservice-enrolador-pagador)
+     - [Métodos generales](#métodos-generales-1)
+     - [Métodos específicos](#métodos-específicos-1)
+     - [Ejemplo de Implementación](#ejemplo-de-implementación)
+     - [Validación de token](#validación-de-token)
+     - [Autorización de transacciones](#autorización-de-transacciones)
+     - [Validación de autorización (opcional)](#validación-de-autorización-opcional)
+5. [Enrolador Dual (Recaudador y Pagador)](#enrolador-dual-recaudador-y-pagador)
+   - [Requisitos para Implementar un Enrolador Dual](#requisitos-para-implementar-un-enrolador-dual)
+6. [Control de integridad](#control-de-integridad)
+   - [IntegrityService](#integrityservice)
+     - [Métodos Disponibles](#métodos-disponibles)
 
 # Instalación
 
@@ -25,299 +38,530 @@ Para instalar la biblioteca, utiliza npm o yarn:
 npm install redpay-sdk-nodejs
 # o
 yarn add redpay-sdk-nodejs
-
 ```
 
-## Configuración inicial
+# RedPayClient: Gestión de Peticiones HTTP
 
-La configuración inicial de la librería es global y se realiza una única vez. Define los parámetros necesarios como certificados, secretos y el entorno de ejecución (producción o integración).
+El cliente de RedPay es una clase que permite realizar peticiones HTTP a los servicios de RedPay.
 
-**Ejemplo:**
-
-```typescript
-import { RedPayConfigProvider, RedPayEnvironment } from "redpay-sdk-nodejs";
-
-const config = {
-  secrets: {
-    integrity:
-      "90d966f496e3a3831efb5f3f8a01ba5ad8883479c8e62e55d4656471c5f6508b",
-    authorize:
-      "EDcbe8f8cA1B7Ac5026d9ebBfBeA34A22CfEd7A9b31D315f0f31d76EFDae5dbF",
-  },
-  environment: RedPayEnvironment.Integration,
-  certificates: {
-    certPath: "/path/to/certificate.crt",
-    keyPath: "/path/to/private.key",
-    verifySSL: true,
-  },
-};
-
-RedPayConfigProvider.setConfig(config);
-```
-
-## RedPayClient: Gestión de Peticiones HTTP
-
-El cliente de RedPay es una clase que permite realizar peticiones HTTP a los servicios de RedPay. 
-
-### Características
+## Características
 
 - Firma Automática: Las peticiones son firmadas automáticamente con el secreto de integridad.
 - Validación de Respuestas: Se verifica la firma en las respuestas para evitar manipulaciones.
 
-## Servicios Disponibles
+# Enrolador Recaudador
 
-### RedPayERService (Enrolador Recaudador)
+## Configuración inicial
 
-Este servicio está diseñado para las integraciones de tipo **Enrolador Recaudador** y ofrece las siguientes funcionalidades:
+La configuración inicial de la librería es global y debe realizarse una única vez. Define los certificados, secretos y parámetros del entorno (producción o integración) necesarios para operar como recolector.
 
-#### Métodos generales:
+**Ejemplo de Configuración:**
+
+```typescript
+import {
+  RedPayConfigProvider,
+  RedPayEnvironment,
+  Certificate,
+  Secrets,
+  Accounts,
+  Account,
+  Bank,
+  AccountAuthorization,
+} from "redpay-sdk-nodejs";
+
+// Certificados mTLS
+const certificates = new Certificate({
+  key_path: "private.key",
+  cert_path: "certificate.crt",
+});
+
+
+const secrets = new Secrets({
+  integrity: "90d966f496e3a3831ee62e55d4656471c5f6508b",
+  chargeback: "4B3C60D59fA9EE7D3dC837Ff18e3d4b7fCcED2fe674",
+});
+
+const accounts = new Accounts({
+  // Cuenta de devolución (opcional)
+  chargeback: new Account({
+    account_id: "demo",
+    number: 22222222,
+    sbif_code: Bank.BANCO_BICE,
+    type: AccountAuthorization.CORRIENTE,
+  }),
+});
+
+
+RedPayConfigProvider.getInstance().setConfig({
+  type: Enroller.COLLECTOR,
+  certificates,
+  environment: RedPayEnvironment.Integration,
+  secrets,
+  accounts,
+});
+```
+
+## RedPayService
+
+Este servicio ofrece las siguientes funcionalidades para las integraciones de tipo **Enrolador Recaudador**:
+
+### Métodos generales:
 
 - `createUser`: Crear un usuario recolector.
 - `updateUser`: Actualizar información de un usuario recolector.
 - `verifyUser`: Verificar la información de un usuario recolector.
 
-#### Métodos específicos:
+### Métodos específicos:
 
 - `generateToken`: Crear un token para operaciones.
 - `validateToken`: Validar los detalles de un token (opcional).
 - `revokeToken`: Revocar un token existente.
-- `chargeback`: Realizar un contra cargo (devolución).
-- `validateAuthorization`: Validar autorización de una trasacción.
+- `generateChargeback`: Realizar un contra cargo (devolución).
+- `validateAuthorization`: Validar estado final de una transacción.
 
-**Ejemplo de Implementación:**
-
-```typescript
-import {
-  RedPayERService,
-  UserCollector,
-  ScheduleMode,
-} from "redpay-sdk-nodejs";
-
-
-const erService = new RedPayERService();
-
-const collector = {
-  account: {
-    id: "22222222",
-    owner_id: "BANCO_BICE",
-    type: "001",
-    tax_id: "76222222-1",
-  },
-  email: "collector@example.com",
-  enroller_user_id: "123456789",
-  name: "Empresa ABC",
-  geo: { lat: "1.234", lng: "1.234" },
-  gloss: "Gloss",
-  tax_address: "Tax Address",
-  settlement: {
-    schedule: { mode: ScheduleMode.DAYS_OF_WEEK, value: [1, 2, 3, 4, 5] },
-  },
-};
-
-const userCreated = await erService.createUser(UserCollector, collector);
-```
-
-### RedPayEPService (Enrolador Pagador)
-
-Este servicio está diseñado para las integraciones de tipo **Enrolador Pagador** y ofrece las siguientes funcionalidades:
-
-#### Métodos generales:
-
-- `createUser`: Crear un usuario pagador.
-- `updateUser`: Actualizar información de un usuario pagador.
-- `verifyUser`: Verificar la información de un usuario pagador.
-
-#### Métodos específicos:
-
-- `validateToken`: Validar los detalles de un token.
-- `authorizeToken`: Autorizar una transacción.
-- `validateAuthorization`: Validar autorización de una trasacción.
-
-**Ejemplo de Implementación:**
+**Ejemplo de Implementación: Generación de usuario (comercio)**
 
 ```typescript
 import {
-  RedPayEPService,
-  UserPayer,
+  RedPayService,
+  UserCollectorRequest,
+  UserAccount,
   Bank,
   AccountUser,
+  Geo,
+  Withdrawal,
 } from "redpay-sdk-nodejs";
 
-const epService = new RedPayEPService();
+const userAccount = new UserAccount({
+  number: 22222222,
+  sbif_code: Bank.BANCO_BICE,
+  tax_id: "76222222-1",
+  type: AccountUser.CUENTA_CORRIENTE,
+});
 
-const payer = {
-  account: {
-    id: "33333333",
-    owner_id: Bank.BANCO_BICE,
-    type: AccountUser.CUENTA_CORRIENTE,
-    tax_id: "12345678-9",
-  },
-  email: "example@domain.com",
-  enroller_user_id: "987654321",
-  name: "Example Payer",
-  geo: { lat: "1.234", lng: "1.234" }, // Opcional
-};
+const geo = new Geo({
+  lat: 1.1234,
+  lng: 1.1234,
+});
 
-const userCreated = await epService.createUser(UserPayer, payer);
+const withdrawal = new Withdrawal({
+  mode: WithdrawalMode.MONTHLY,
+});
+
+const userCollectorRequest = new UserCollectorRequest({
+  user_id: "demo",
+  email: "example@example.com",
+  name: "Comercio de prueba",
+  account: userAccount,
+  geo: geo,
+  tax_address: "Calle de fantasia 123",
+  tax_id: "76222222-1",
+  gloss: "Comercio de prueba",
+  withdrawal: withdrawal,
+});
+
+const service = new RedPayService();
+
+try {
+  const userCreated = await service.createUser(userCollectorRequest);
+} catch (e) {
+  console.log("Error al crear el usuario", e);
+}
 ```
 
-## Gestión de Tokens
+#### Withdrawal
+
+El objeto `Withdrawal` se utiliza para definir el modo de retiro de fondos de un usuario recolector que utiliza el Portal de Cartolas. Los modos disponibles son:
+
+- `WithdrawalMode.MONTHLY`: Retiro mensual.
+- `WithdrawalMode.WEEKLY`: Retiro quincenal.
+- `WithdrawalMode.DAILY`: Retiro diario.
+- `WithdrawalMode.MANUAL`: Retiro manual (personalizado).
+
+Para el modo `MANUAL`, se debe definir el campo `settlement` con la frecuencia de retiro deseada.
+
+### Gestión de Tokens
 
 Los tokens son componentes esenciales para las operaciones en RedPay. La librería permite manejar diversos tipos de tokens (T0, T1, T2, T3, T4), cada uno con características específicas.
 
-### Tipos de Tokens
+#### Tipos de Tokens
 
 - T0: Token de transacción.
 - T1: Token de suscripción.
 - T2: Token de cobro de suscripción.
 - T3: Token de envío de dinero.
 - T4: Token de transacción con un alias.
-- T6: Token del portal de recargas.
 
-**Ejemplo de Implementación:**
+**Ejemplo de Implementación: Generación de token**
 
 ```typescript
-import { RedPayERService, TokenT0, TokenType } from "redpay-sdk-nodejs";
+import {
+  RedPayService,
+  TokenT0Request,
+  TokenDataT0
+  TokenType,
+} from "redpay-sdk-nodejs";
 
-const erService = new RedPayERService();
-
-const tokenPayload = {
-  enroller_user_id: "123456789",
-  data: {
-    amount: 5000,
-  },
-  detail: "Compra en línea",
-  extra_data: '{"OrderID": "12345"}',
-  lifetime: 300,
-  reusability: 1,
+const tokenT0Request = new TokenT0Request({
+  user: userCollector,
+  data: new TokenDataT0({
+    amount: 1000,
+  }),
   token_type: TokenType.T0,
-};
+  detail: "Token de Prueba",
+});
 
-const tokenCreated = await erService.generateToken(TokenT0, tokenPayload);
-```
+const service = new RedPayService();
 
-## Fillers
-
-Los Fillers son objetos utilizados para garantizar la integridad en operaciones críticas dentro de los servicios de RedPay. Están diseñados para incluir información relevante de la cuenta y generar una firma basada en el modo de operación.
-
-#### Modos Disponibles
-- FillerMode.Authorize: Usado para autorizaciones `Enrolador Pagador`.
-- FillerMode.Chargeback: Usado para devoluciones manuales `Enrolador Recaudador`.
-- FillerMode.ChargebackAutomatic: Usado para devoluciones automáticas `Enrolador Recaudador`.
-
-
-**Ejemplo de Implementación:**
-
-```typescript
-import { Filler, FillerAccount, FillerMode, Bank } from "redpay-sdk-nodejs";
-
-const fillerAccount = new FillerAccount("123456789", Bank.BANCO_BICE, "CORRIENTE");
-const filler = new Filler("id_filler", fillerAccount, FillerMode.Authorize);
-
-console.log(filler);
-/*
-Output:
-{
-  id: "id_filler",
-  account: { number: "123456789", sbif_code: "028", type: "CORRIENTE" },
-  timestamp: 1672531200000,
-  signature: "generated-signature",
+try {
+  const tokenCreated = await service.generateToken(tokenT0Request);
+} catch (e) {
+  console.log("Error al crear el token", e);
 }
-*/
-
 ```
 
-## Control de integridad
-
-Esté set de funciones permiten controlar la integridad de los datos enviados o recibidos en servicios de RedPay.
-
-### generateSignature(input: object, secret: string): string
-
-Permite generar la firma de un objeto.
-
-Parámetros de entrada entrada:
-
-- input: el objeto para el cual desean generar una firma
-- secret: el secreto a utilizar para firmar el objeto
-
-Valor de retorno:
-
-- La firma, string de 64 caracteres correspondiente al objeto de entrada
-
-**Ejemplo:**
+**Ejemplo de Implementación: Revocación de token**
 
 ```typescript
-import { generateSignature } from "redpay-sdk-nodejs";
+import { RedPayService, RevokeTokenRequest } from "redpay-sdk-nodejs";
 
-const signature = generateSignature(
-  {
-    hello: "world",
-  },
-  "f441bb4d-9cd3-410a-8ede-cefd33cf3fa0"
-);
+const revokeTokenRequest = new RevokeTokenRequest({
+  user: userCollector,
+  token_uuid: "token_uuid",
+});
 
-console.log(signature);
-// output: ba1cf4f1a0d5659a4c7dd8c70f74788a532c644c65eeb3d46d9e56cdb22eaeaa
+const service = new RedPayService();
+
+try {
+  const tokenRevoked = await service.revokeToken(revokeTokenRequest);
+} catch (e) {
+  console.log("Error al revocar el token", e);
+}
 ```
 
-### validateSignature(input: object, secret: string): boolean
-
-Permite validar la firma de un objeto.
-
-Parámetros de entrada entrada:
-
-- input: el objeto para el cual desea validar la firma
-- secret: el secreto a utilizar para firmar el objeto
-
-Valor de retorno:
-
-- Un booleano correspondiente a la validez del signature
-
-**Ejemplo:**
+**Ejemplo de Implementación: Validación de token**
 
 ```typescript
-import { validateSignature } from "redpay-sdk-nodejs";
+import { RedPayService, ValidateTokenRequest } from "redpay-sdk-nodejs";
 
-const isSignatureValid = validateSignature(
-  {
-    hello: "world",
-    signature:
-      "ba1cf4f1a0d5659a4c7dd8c70f74788a532c644c65eeb3d46d9e56cdb22eaeaa",
-  },
-  "f441bb4d-9cd3-410a-8ede-cefd33cf3fa0"
-);
+const validateTokenRequest = new ValidateTokenRequest({
+  user: userCollector,
+  token_uuid: "token_uuid",
+});
 
-console.log(isSignatureValid);
-// output: true
+const service = new RedPayService();
+
+try {
+  const tokenValidated = await service.validateToken(validateTokenRequest);
+} catch (e) {
+  console.log("Error al validar el token", e);
+}
 ```
 
-### getSignedObject(input: object, secret: string): object
+### Validación de autorización
 
-Permite generar un objeto firmado.
+El método `validateAuthorization` permite validar el estado final de una autorización de transacción. Dependiendo de la propiedad `status_code` obtenida en la respuesta, se puede determinar si la transacción fue exitosa, fallida o se encuentra en proceso.
 
-Parámetros de entrada entrada:
-
-- input: el objeto para el cual desea sumarle la firma
-- secret: el secreto a utilizar para firmar el objeto
-
-Valor de retorno:
-
-- Un objeto poblado con el campo `signature` el cual contiene la firma correspondiente
-
-**Ejemplo:**
+**Ejemplo de Implementación: Validación de autorización**
 
 ```typescript
-import { getSignedObject } from "redpay-sdk-nodejs";
+import {
+  RedPayService,
+  ValidateAuthorizationCollectorRequest,
+} from "redpay-sdk-nodejs";
 
-const signedObject = getSignedObject(
-  {
-    hello: "world",
-    signature:
-      "ba1cf4f1a0d5659a4c7dd8c70f74788a532c644c65eeb3d46d9e56cdb22eaeaa",
-  },
-  "f441bb4d-9cd3-410a-8ede-cefd33cf3fa0"
-);
+const validateAuthorizationRequest = new ValidateAuthorizationCollectorRequest({
+  user: userCollector,
+  authorization_uuid: "authorization_uuid",
+});
 
+const service = new RedPayService();
+
+try {
+  const authorizationValidated = await service.validateAuthorization(
+    validateAuthorizationRequest
+  );
+} catch (e) {
+  console.log("Error al validar una autorización", e);
+}
+```
+
+### Detalles de la devolución
+
+Para realizar una devolución, se debe definir previamente la cuenta `chargeback` en la configuración inicial de la librería.
+
+Adicionalmente, si desea operar con el modelo devolución automática, se debe definir el `secrets.chargeback_automatic` y la cuenta `account.chargeback_automatic` en la configuración inicial de la librería.
+
+**Ejemplo de Implementación: Devolución (opcional)**
+
+```typescript
+import { RedPayService, ChargebackRequest } from "redpay-sdk-nodejs";
+
+const chargeback = new ChargebackRequest({
+  user: userCollector,
+  amount: 1000, // Monto a devolver (puede ser parcial o total)
+  authorization
+});
+
+const service = new RedPayService();
+
+try {
+  const chargebackCreated = await service.generateChargeback(chargeback);
+} catch (e) {
+  console.log("Error al generar devolución", e);
+}
+```
+
+# Enrolador Pagador (Billetera Digital)
+
+## Configuración inicial
+
+a configuración inicial de la librería es global y debe realizarse una única vez. Define los certificados, secretos y parámetros del entorno (producción o integración) necesarios para operar como pagador (billetera digital).
+
+**Ejemplo de Implementación: Configuración inicial**
+
+```typescript
+import {
+  RedPayConfigProvider,
+  RedPayEnvironment,
+  Certificate,
+  Secrets,
+  Accounts,
+  Account,
+  Bank,
+  AccountAuthorization,
+} from "redpay-sdk-nodejs";
+
+// Certificados mTLS
+const certificates = new Certificate({
+  key_path: "private.key",
+  cert_path: "certificate.crt",
+});
+
+const secrets = new Secrets({
+  integrity: "90d966f496e3a3831ee62e55d4656471c5f6508b",
+  authorize: "4B3C60D59fA9EE7D3dC837Ff18e3d4b7fCcED2fe674",
+});
+
+const accounts = new Accounts({
+  // Cuenta de autorización
+  authorize: new Account({
+    account_id: "demo_ep",
+    number: 22222222,
+    sbif_code: Bank.BANCO_BICE,
+    type: AccountAuthorization.CORRIENTE,
+  }),
+});
+
+RedPayConfigProvider.getInstance().setConfig({
+  type: Enroller.PAYER,
+  certificates,
+  environment: RedPayEnvironment.Integration,
+  secrets,
+  accounts,
+});
+```
+
+## RedPayService (Enrolador Pagador)
+
+Este servicio ofrece las siguientes funcionalidades para las integraciones de tipo **Enrolador Pagador**:
+
+### Métodos generales:
+
+- `createUser`: Crear un usuario pagador.
+- `updateUser`: Actualizar información de un usuario pagador.
+- `verifyUser`: Verificar la información de un usuario pagador.
+
+### Métodos específicos:
+
+- `validateToken`: Obtener detalles de un token.
+- `authorizeToken`: Autorizar una transacción.
+- `validateAuthorization`: Validar autorización de una trasacción.
+
+### Ejemplo de Implementación
+
+**Ejemplo de Implementación: Generación de usuario (pagador)**
+
+```typescript
+import {
+  RedPayService,
+  UserPayerRequest,
+  UserAccount,
+  Bank,
+  AccountUser,
+  Geo,
+} from "redpay-sdk-nodejs";
+
+const userAccount = new UserAccount({
+  account_id: "demo_ep",
+  number: 22222222,
+  sbif_code: Bank.BANCO_BICE,
+  tax_id: "76222222-1",
+  type: AccountUser.CUENTA_CORRIENTE,
+});
+
+const geo = new Geo({
+  lat: 1.1234,
+  lng: 1.1234,
+}); // Opcional
+
+const userPayerRequest = new UserPayerRequest({
+  email: "example@example.com",
+  name: "Pagador de prueba",
+  account: userAccount,
+  tax_id: "18185630-0",
+  geo: geo,
+  user_id: "demo_ep", // Identificador único del usuario
+});
+
+const service = new RedPayService();
+
+try {
+  const userCreated = await service.createUser(userPayerRequest);
+} catch (e) {
+  console.log("Error al crear el usuario", e);
+}
+```
+
+### Validación de token
+
+El método `validateToken` permite obtener detalles de un token. Se utiliza para verificar la información de un token antes de realizar una operación de autorización.
+
+**Ejemplo de Implementación: Validación de token**
+
+```typescript
+import { RedPayService, ValidateTokenRequest } from "redpay-sdk-nodejs";
+
+const validateTokenRequest = new ValidateTokenRequest({
+  user: userPayer,
+  token_uuid: "token_uuid",
+});
+
+const service = new RedPayService();
+
+try {
+  const tokenValidated = await service.validateToken(validateTokenRequest);
+} catch (e) {
+  console.log("Error al validar el token", e);
+}
+```
+
+### Autorización de transacciones
+
+El método `authorizeToken` permite autorizar una transacción utilizando un token previamente validado.
+
+**Ejemplo de Implementación: Autorización de transacciones**
+
+```typescript
+import { RedPayService, AuthorizeRequest } from "redpay-sdk-nodejs";
+
+const authorizeRequest = new AuthorizeRequest({
+  user: userPayer,
+  token_uuid: "token_uuid",
+  amount: 1000, // Monto a autorizar (se obtiene desde la validación del token)
+  token_type: TokenType.T0, // Tipo de token a autorizar (se obtiene desde la validación del token)
+  validation_uuid: "validation_uuid", // Identificador de la validación del token (operation_uuid)
+});
+
+const service = new RedPayService();
+
+try {
+  const authorizationCreated = await service.authorizeToken(authorizeRequest);
+} catch (e) {
+  console.log("Error al autorizar la transacción", e);
+}
+```
+
+### Validación de autorización (opcional)
+
+El método `validateAuthorization` permite validar el estado final de una autorización de transacción. Este método es opcional y se puede utilizar cuando se recibe una autorización fallida (por ejemplo, cuando tienes como respuesta un `TIMEOUT` en la autorización).
+
+Para utilizar este método, debe definir uno o ambos de los siguientes campos: `authorization_uuid` o `validation_uuid`.
+
+**Ejemplo de Implementación: Validación de autorización**
+
+```typescript
+import { RedPayService, ValidateAuthorizationPayerRequest } from "redpay-sdk-nodejs";
+
+const validateAuthorizationRequest = new ValidateAuthorizationPayerRequest({
+  user: userPayer,
+  authorization_uuid: "authorization_uuid",
+  validation_uuid: "validation_uuid",
+});
+
+const service = new RedPayService();
+
+try {
+  const authorizationValidated = await service.validateAuthorization(validateAuthorizationRequest);
+} catch (e) {
+  console.log("Error al validar la autorización", e);
+}
+```
+
+# Enrolador Dual (Recaudador y Pagador)
+
+El **Enrolador Dual** combina las funcionalidades del Enrolador Recaudador y el Enrolador Pagador, permitiendo gestionar tanto la recolección como el pago de fondos en una misma integración.
+
+## Requisitos para implementar un Enrolador Dual
+
+Un Enrolador Dual debe implementar las capacidades de ambos roles:
+
+1. **Funcionalidades de Enrolador Recaudador:**
+
+- Gestión de usuarios recolectores, incluyendo creación, actualización y verificación.
+- Generación, validación (opcional) y revocación de tokens asociados a la recolección de fondos
+- Manejo de devoluciones mediante el método `generateChargeback` (opcional).
+
+2. **Funcionalidades de Enrolador Pagador:**
+
+- Gestión de usuarios pagadores, incluyendo creación, actualización y verificación.
+- Validación y autorización de tokens para el pago de transacciones
+- Manejo de devoluciones
+
+# Control de integridad
+
+Además de las funcionalidades de los servicios de RedPay, la librería proporciona un servicio para la generación y validación de firmas en los objetos de las transacciones.
+
+## IntegrityService
+
+El `IntegrityService` incluye los siguientes métodos principales:
+
+### Métodos Disponibles:
+
+1. `generateSignature(input: object, secret: string): string`: Genera una firma digital única para un objeto utilizando HMAC SHA256.
+
+**Ejemplo**
+
+```typescript
+import { RedPayIntegrity } from "redpay-sdk-nodejs";
+
+const data = { amount: 1000, currency: "CLP" };
+const secret = "clave_secreta";
+const signature = RedPayIntegrity.generateSignature(data, secret);
+```
+
+2. `validateSignature(input: object, secret: string): boolean`: Valida si la firma de un objeto coincide con los datos proporcionados.
+
+**Ejemplo**
+
+```typescript
+const isValid = RedPayIntegrity.validateSignature(signedObject, secret);
+console.log(isValid); // true o false
+```
+
+3. `validateSignatureOrFail(input: object, secret: string): void`: Valida si la firma de un objeto coincide con los datos proporcionados. En caso de que la firma no sea válida, lanza una excepción.
+
+**Ejemplo**
+
+```typescript
+RedPayIntegrity.validateSignatureOrFail(signedObject, secret);
+```
+
+4. `getSignedObject(input: object, secret: string): object`: Retorna el objeto original acompañado de una firma generada automáticamente.
+
+**Ejemplo**
+
+```typescript
+const signedObject = RedPayIntegrity.getSignedObject(data, secret);
 console.log(signedObject);
-// output: { "hello": "world", "signature": "ba1cf4f1a0d5659a4c7dd8c70f74788a532c644c65eeb3d46d9e56cdb22eaeaa" }
 ```
