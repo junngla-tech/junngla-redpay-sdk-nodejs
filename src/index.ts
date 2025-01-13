@@ -5,12 +5,6 @@
 import "reflect-metadata";
 
 /**
- * Funciones relacionadas con la generación y validación de firmas para garantizar la integridad de los datos.
- * @module Integrity.service
- */
-export * from "./Integrity.service";
-
-/**
  * Enumeraciones que definen valores clave y constantes utilizadas en diferentes partes de la biblioteca.
  * @module enum
  */
@@ -23,7 +17,7 @@ export * from "./enum";
 export * from "./interface";
 
 /**
- * Clases y abstracciones principales utilizadas para manejar entidades como usuarios, tokens y fillers.
+ * Clases y abstracciones principales utilizadas para manejar entidades como usuarios, tokens, entre otros.
  * @module model
  */
 export * from "./model";
@@ -45,4 +39,3 @@ export * from "./services";
  * @module types
  */
 export * from "./types";
-
