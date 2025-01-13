@@ -1,75 +1,39 @@
-import { IUserAccount } from "../interface";
-import { AccountId, AccountType, SbifCode } from "../types";
+import { Exclude, Expose, Transform, Type } from "class-transformer";
+import { IAccount, IAccounts } from "../interface/RedPayConfig";
+import { SbifCode } from "../types/SbifCode";
+import { AccountType } from "../types/AccountType";
+import { ClassBase } from "./ClassBase";
 
-/**
- * Clase que representa una cuenta bancaria utilizada en ciertas operaciones que se necesite un filler.
- */
-export class FillerAccount {
-  /**
-   * Número de la cuenta.
-   */
-  private readonly number: string;
+export class Account extends ClassBase<Account> implements IAccount {
+  @Expose({ toClassOnly: true })
+  @Exclude({ toPlainOnly: true })
+  account_id!: string;
 
-  /**
-   * Código SBIF asociado al banco de la cuenta.
-   */
-  private readonly sbif_code: SbifCode;
+  @Expose({ toPlainOnly: true })
+  @Transform(({ obj }) => obj.account_id)
+  private id!: string;
 
-  /**
-   * Tipo de cuenta (por ejemplo, Cuenta Corriente o Cuenta Vista).
-   */
-  private readonly type: AccountType;
+  @Expose()
+  @Transform(({ obj }) => obj.number.toString(), { toPlainOnly: true })
+  number!: number;
 
-  /**
-   * Constructor para crear una instancia de FillerAccount.
-   * @param number - Número de la cuenta.
-   * @param sbif_code - Código SBIF del banco.
-   * @param type - Tipo de la cuenta.
-   */
-  constructor(number: string, sbif_code: SbifCode, type: AccountType) {
-    this.number = number;
-    this.sbif_code = sbif_code;
-    this.type = type;
-  }
+  @Expose()
+  sbif_code!: SbifCode;
+
+  @Expose()
+  type!: AccountType;
 }
 
-/**
- * Clase que representa una cuenta bancario de un usuario.
- */
-export class Account implements IUserAccount {
-  /**
-   * Identificador único de la cuenta.
-   */
-  id: string;
+export class Accounts extends ClassBase<Accounts> implements IAccounts {
+  @Expose()
+  @Type(() => Account)
+  authorize?: Account;
 
-  /**
-   * Identificador de la institución financiera (por ejemplo, "028").
-   */
-  owner_id: SbifCode;
+  @Expose()
+  @Type(() => Account)
+  chargeback?: Account;
 
-  /**
-   * Tipo de la cuenta bancaria.
-   * Cuenta Corriente: "001"
-   * Cuenta Vista: "002"
-   */
-  type: AccountId;
-
-  /**
-   * Identificación tributaria asociada a la cuenta.
-   */
-  tax_id: string;
-
-  /**
-   * Constructor para crear una instancia de Account.
-   * @param id - Identificador único de la cuenta.
-   * @param owner_id - Identificador del propietario de la cuenta.
-   * @param type - Tipo de cuenta.
-   * @param tax_id - Identificación tributaria asociada.
-   */
-  constructor({ id, owner_id, type, tax_id }: IUserAccount) {
-    this.id = id;
-    this.owner_id = owner_id;
-    this.type = type;
-    this.tax_id = tax_id;
-  }
+  @Expose()
+  @Type(() => Account)
+  chargeback_automatic?: Account;
 }

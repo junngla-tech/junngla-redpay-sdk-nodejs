@@ -1,1 +1,1 @@
-export * from "./RedPayConfigProvider";
+export * from './RedPayConfigProvider';

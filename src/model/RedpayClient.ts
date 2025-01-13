@@ -3,14 +3,13 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
-import { getSignedObject, validateSignature } from "../Integrity.service";
-import { IError } from "../interface";
-import { IRedPayConfig } from "../interface/RedPayConfig";
-import { RedPayEnvironment } from "../enum";
 import { API_URL_INTEGRATION, API_URL_PRODUCTION } from "../config/constants";
 import { Agent } from "https";
-import { RedPayConfigProvider } from "../provider/RedPayConfigProvider";
 import * as fs from "fs";
+import { RedPayConfigProvider } from "../provider";
+import { RedPayEnvironment } from "../enum";
+import { RedPayIntegrity } from "../services/RedPayIntegrity";
+import { IError, IRedPayConfig } from "../interface";
 
 /**
  * Cliente RedPay para realizar solicitudes HTTP firmadas y validar integridad.
@@ -25,12 +24,12 @@ export class RedPayClient {
    * Configura los certificados, URL base y los interceptores.
    */
   constructor() {
-    this.config = RedPayConfigProvider.getConfig();
+    this.config = RedPayConfigProvider.getInstance().getConfig();
 
     this.httpsAgent = new Agent({
-      rejectUnauthorized: this.config.certificates.verifySSL ?? true,
-      cert: fs.readFileSync(this.config.certificates.certPath),
-      key: fs.readFileSync(this.config.certificates.keyPath),
+      rejectUnauthorized: this.config.certificates.verify_SSL ?? true,
+      cert: fs.readFileSync(this.config.certificates.cert_path),
+      key: fs.readFileSync(this.config.certificates.key_path),
     });
 
     this.axiosInstance = axios.create({
@@ -67,11 +66,14 @@ export class RedPayClient {
     this.axiosInstance.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
         if (config.data) {
-          config.data = getSignedObject(config.data, this.getSecretIntegrity());
+          config.data = RedPayIntegrity.getSignedObject(
+            config.data,
+            this.getSecretIntegrity()
+          );
         }
 
         if (config.params) {
-          config.params = getSignedObject(
+          config.params = RedPayIntegrity.getSignedObject(
             config.params,
             this.getSecretIntegrity()
           );
@@ -84,13 +86,12 @@ export class RedPayClient {
     // Interceptor de respuesta: Validar firma recibida.
     this.axiosInstance.interceptors.response.use(
       (response: AxiosResponse) => {
-        const signatureIsValid = validateSignature(
+        const signatureIsValid = RedPayIntegrity.validateSignature(
           response.data,
           this.getSecretIntegrity()
         );
 
         if (!signatureIsValid) {
-          // TODO: Verificar si se debe retornar un error específico.
           return Promise.reject({
             message: "Invalid signature",
             signature: response?.data?.signature,
@@ -130,7 +131,21 @@ export class RedPayClient {
           data: error.response.data,
         };
       }
-      throw new Error("Unexpected error occurred during the request.");
+      throw new Error(`Unexpected error occurred during the request: ${error}`);
+    }
+  }
+
+  /**
+   * Realiza una solicitud GET firmada.
+   * @param path - Ruta de la solicitud.
+   * @param params - Parámetros de la solicitud.
+   * @returns Una promesa con la respuesta deserializada o un objeto vacío en caso de error.
+   */
+  public async get<T>(path: string, params?: object): Promise<T> {
+    try {
+      return await this.request<T>("get", path, params);
+    } catch (error) {
+      return {} as T; // Devuelve un objeto vacío en caso de error
     }
   }
 
@@ -140,7 +155,7 @@ export class RedPayClient {
    * @param params - Parámetros de la solicitud.
    * @returns Una promesa con la respuesta deserializada.
    */
-  public async get<T>(path: string, params?: object): Promise<T> {
+  public async getOrFail<T>(path: string, params?: object): Promise<T> {
     return this.request<T>("get", path, params);
   }
 
