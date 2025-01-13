@@ -1,12 +1,52 @@
- // TODO: donde realizar este import? es necesario para class-transformer
-import { Expose, Type } from "class-transformer";
-import { TokenType, UserType } from "../enum";
-import { IData, ITokenBase } from "../interface";
+import {
+  Exclude,
+  Expose,
+  plainToInstance,
+  Transform,
+  Type,
+} from "class-transformer";
+import { IData, IPaymentToken } from "../interface";
+import { UserType, TokenType } from "../enum";
+import { UserCollectorRequest } from "./User";
+import { ClassBase } from "./ClassBase";
 
 /**
- * Clase que representa los datos específicos de un token.
+ * Datos específicos asociados a un token de tipo T0.
  */
-class TokenData implements IData {
+export class TokenDataT0 extends ClassBase<TokenDataT0> implements IData {
+  /**
+   * Monto asociado al token.
+   */
+  @Expose()
+  amount!: number;
+}
+
+/**
+ * Datos específicos asociados a un token de tipo T2.
+ */
+export class TokenDataT2 extends ClassBase<TokenDataT2> implements IData {
+  /**
+   * Monto asociado al token.
+   */
+  @Expose()
+  amount!: number;
+}
+
+/**
+ * Datos específicos asociados a un token de tipo T3.
+ */
+export class TokenDataT3 extends ClassBase<TokenDataT3> implements IData {
+  /**
+   * Monto asociado al token.
+   */
+  @Expose()
+  amount!: number;
+}
+
+/**
+ * Datos específicos asociados a un token de tipo T4.
+ */
+export class TokenDataT4 extends ClassBase<TokenDataT4> implements IData {
   /**
    * Monto asociado al token.
    */
@@ -17,18 +57,21 @@ class TokenData implements IData {
 /**
  * Clase abstracta que sirve como base para todos los tipos de tokens.
  */
-abstract class TokenBase implements ITokenBase {
-  /**
-   * Identificador del enrolador asociado al token.
-   */
-  @Expose()
-  enroller_user_id!: string;
+export abstract class TokenBase extends ClassBase<TokenBase> {
+  @Expose({ toClassOnly: true })
+  @Exclude({ toPlainOnly: true })
+  @Type(() => UserCollectorRequest)
+  user!: UserCollectorRequest;
 
+  @Expose({ toPlainOnly: true })
+  // @Exclude({ toClassOnly: true })
+  @Transform(({ obj }) => obj.user.user_id, { toPlainOnly: true })
+  private enroller_user_id!: string;
   /**
    * Descripción o detalle del token.
    */
   @Expose()
-  detail?: string;
+  detail!: string;
 
   /**
    * Datos adicionales del token en formato JSON.
@@ -48,46 +91,72 @@ abstract class TokenBase implements ITokenBase {
   @Expose()
   reusability?: number;
 
-  /**
-   * Tipo de token, representado por la enumeración `TokenType`.
-   */
-  @Expose()
-  token_type!: TokenType;
 }
 
 /**
- * Token de tipo T0: Incluye datos específicos asociados.
+ * Token de tipo T0: Compra
  */
-class TokenT0 extends TokenBase {
+export class TokenT0Request extends TokenBase {
   /**
    * Datos específicos del token.
    */
   @Expose()
-  @Type(() => TokenData)
-  data!: TokenData;
+  @Type(() => TokenDataT0)
+  data!: TokenDataT0;
+
+  /**
+   * Tipo de token: T0.
+   */
+  @Expose({ toPlainOnly: true })
+  @Transform(() => TokenType.T0)
+  get token_type(): string {
+    return TokenType.T0;
+  }
+
+  constructor(data?: Partial<TokenT0Request> | string) {
+    super(data);
+  }
 }
 
 /**
- * Token de tipo T1: No incluye datos específicos.
+ * Token de tipo T1: Suscripción
  */
-class TokenT1 extends TokenBase {}
+export class TokenT1Request extends TokenBase {
+  /**
+   * Tipo de token: T1.
+   */
+  @Expose({ toPlainOnly: true })
+  @Transform(() => TokenType.T1)
+  get token_type(): string {
+    return TokenType.T1;
+  }
+}
 
 /**
- * Token de tipo T2: Incluye datos específicos asociados.
+ * Token de tipo T2: Cobro de suscripción
  */
-class TokenT2 extends TokenBase {
+export class TokenT2Request extends TokenBase {
   /**
    * Datos específicos del token.
    */
   @Expose()
-  @Type(() => TokenData)
-  data!: TokenData;
+  @Type(() => TokenDataT2)
+  data!: TokenDataT2;
+
+  /**
+   * Tipo de token: T2.
+   */
+  @Expose({ toPlainOnly: true })
+  @Transform(() => TokenType.T2)
+  get token_type(): string {
+    return TokenType.T2;
+  }
 }
 
 /**
- * Token de tipo T3: Asociado a un usuario con tipo definido y datos específicos.
+ * Token de tipo T3: Envío de dinero de producto Alias Send
  */
-class TokenT3 extends TokenBase {
+export class TokenT3Request extends TokenBase {
   /**
    * Tipo de usuario asociado al token.
    */
@@ -98,14 +167,23 @@ class TokenT3 extends TokenBase {
    * Datos específicos del token.
    */
   @Expose()
-  @Type(() => TokenData)
-  data!: TokenData;
+  @Type(() => TokenDataT3)
+  data!: TokenDataT3;
+
+  /**
+   * Tipo de token: T3.
+   */
+  @Expose({ toPlainOnly: true })
+  @Transform(() => TokenType.T3)
+  get token_type(): string {
+    return TokenType.T3;
+  }
 }
 
 /**
- * Token de tipo T4: Similar al T3, incluye usuario y datos específicos.
+ * Token de tipo T4: Compra de producto Alias Pay
  */
-class TokenT4 extends TokenBase {
+export class TokenT4Request extends TokenBase {
   /**
    * Tipo de usuario asociado al token.
    */
@@ -116,8 +194,68 @@ class TokenT4 extends TokenBase {
    * Datos específicos del token.
    */
   @Expose()
-  @Type(() => TokenData)
-  data!: TokenData;
+  @Type(() => TokenDataT4)
+  data!: TokenDataT4;
+
+  /**
+   * Tipo de token: T4.
+   */
+  @Expose({ toPlainOnly: true })
+  @Transform(() => TokenType.T4)
+  get token_type(): string {
+    return TokenType.T4;
+  }
 }
 
-export { TokenT0, TokenT1, TokenT2, TokenT3, TokenT4 };
+export class TokenResponse extends ClassBase<TokenResponse> {
+  @Expose()
+  @Exclude({ toPlainOnly: true })
+  @Transform(({ obj }) => obj.enroller_user_id)
+  readonly user_id!: string;
+
+  @Exclude()
+  private readonly enroller_user_id!: string;
+
+  @Expose()
+  readonly token_uuid!: string;
+
+  @Expose()
+  readonly token_number!: string;
+
+  @Expose()
+  readonly token_url!: string;
+
+  @Expose()
+  readonly detail!: string;
+
+  @Expose()
+  readonly extra_data?: string;
+
+  @Expose()
+  readonly lifetime!: number;
+
+  @Expose()
+  readonly reusability!: number;
+
+  @Expose()
+  readonly data?: TokenDataT0 | TokenDataT2 | TokenDataT3 | TokenDataT4;
+
+  @Expose()
+  readonly token_type!: TokenType;
+}
+
+export class GenerateTokenResponse extends ClassBase<TokenResponse> {
+  @Exclude()
+  private readonly payment_token!: IPaymentToken;
+
+  @Expose()
+  @Transform(({ obj }) => plainToInstance(TokenResponse, obj.payment_token))
+  @Type(() => TokenResponse)
+  readonly token!: TokenResponse;
+
+  @Expose()
+  readonly operation_uuid!: string;
+
+  @Expose()
+  readonly signature!: string;
+}
