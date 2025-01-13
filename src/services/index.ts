@@ -1,2 +1,2 @@
-export * from './RedPayERService';
-export * from './RedPayEPService';
+export * from './RedPayIntegrity';
+export * from './RedPayService';
