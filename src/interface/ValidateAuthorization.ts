@@ -1,16 +1,16 @@
-import { Filler } from "../model";
+import { SignedAuthorizationAccount } from "../model";
 
-interface IValidateAuthorizationBaseResponse {
+interface IValidateAuthorizationBaseAPIResponse {
   token_uuid: string;
   operations: IOperations;
   is_med: boolean;
-  timestamp: string; //TODO: Revisar tipo
+  timestamp: Date;
   operation_uuid: string;
   signature: string;
 }
 
-export interface IValidateAuthorizationCollectorResponse
-  extends IValidateAuthorizationBaseResponse {
+export interface IValidateAuthorizationCollectorAPIResponse
+  extends IValidateAuthorizationBaseAPIResponse {
   amount: number;
   collector_id: string;
   payer_id: string;
@@ -24,15 +24,18 @@ interface IOperations {
   authorization_uuid: string;
 }
 
-export interface IValidateAuthorizationPayerResponse
-  extends IValidateAuthorizationBaseResponse {
-  filler: Filler;
-  settlement: ISettlement;
-}
-
 interface ISettlement {
   uuid: string;
   reference: string;
   amount: number;
   status: string;
 }
+
+export interface IValidateAuthorizationPayerAPIResponse
+  extends IValidateAuthorizationBaseAPIResponse {
+  filler: SignedAuthorizationAccount;
+  settlement: ISettlement;
+}
+
+
+
