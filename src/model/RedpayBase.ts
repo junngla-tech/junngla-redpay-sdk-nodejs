@@ -1,32 +1,32 @@
-import { PathUrl, UserType } from "../enum";
-import { plainToInstance } from "class-transformer";
-import { RedPayClient } from "./RedpayClient";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 import {
   IRoleActions,
-  IUserCollectorResponse,
-  IUserPayerResponse,
-  IValidateAuthorizationCollectorResponse,
-  IValidateAuthorizationPayerResponse,
-  IValidateWithData,
-  IValidateWithoutData,
+  IUserCollectorAPIResponse,
+  IUserPayerAPIResponse,
+  IValidateAuthorizationCollectorAPIResponse,
+  IValidateAuthorizationPayerAPIResponse,
+  IValidateTokenAPIResponse,
 } from "../interface";
+import { UserParams } from "../types";
+import { RedPayClient } from "./RedPayClient";
 import {
-  UserParams,
-  ValidateAuthorizationCollector,
-  ValidateAuthorizationPayer,
-  ValidateToken,
-} from "../types";
-import { UserCollector, UserPayer } from "./User";
+  UserCollectorRequest,
+  UserPayerRequest,
+  GenerateUserResponse,
+} from "./User";
+import { PathUrl } from "../enum";
+import { ValidateTokenRequest, ValidateTokenResponse } from "./ValidateToken";
+import {
+  ValidateAuthorizationCollectorRequest,
+  ValidateAuthorizationPayerRequest,
+  ValidationAuthorizationResponse,
+} from "./ValidateAuthorization";
 
-type ValidateResponse = IValidateWithData | IValidateWithoutData;
+type UserAPIResponse = IUserPayerAPIResponse | IUserCollectorAPIResponse;
 type ValidateAuthorizationResponse =
-  | IValidateAuthorizationCollectorResponse
-  | IValidateAuthorizationPayerResponse;
-type ValidateAuthorizationRequest =
-  | ValidateAuthorizationCollector
-  | ValidateAuthorizationPayer;
-
-type UserResponse = IUserPayerResponse | IUserCollectorResponse;
+  | IValidateAuthorizationCollectorAPIResponse
+  | IValidateAuthorizationPayerAPIResponse;
+type PartialWithUserId<T> = Partial<T> & { user_id: string };
 
 /**
  * Clase base para la interacción con la API de RedPay.
@@ -47,31 +47,81 @@ export abstract class RedPayBase implements IRoleActions {
   }
 
   /**
-   * Crea un usuario utilizando un payload transformado.
-   * @param userClass - Clase del usuario para la transformación (por ejemplo, `UserPayer`).
-   * @param payload - Objeto que debe ser una instancia o JSON del usuario.
-   * @returns Una promesa con la respuesta del usuario creado.
+   * Crea un usuario utilizando una instancia de usuario.
+   * @param userInstance - Objeto que debe ser una instancia del usuario.
+   * @returns UserResponse - Una promesa con la respuesta del usuario creado.
    */
-  public async createUser<T extends UserPayer | UserCollector>(
-    userClass: new () => T,
-    payload: Omit<T, "user_type">
-  ): Promise<UserResponse> {
-    const userInstance = plainToInstance(userClass, payload);
-    return this.client.post(PathUrl.User, userInstance);
+  public async createUser<T extends UserPayerRequest | UserCollectorRequest>(
+    userInstance: T
+  ): Promise<GenerateUserResponse> {
+    const userPayload = instanceToPlain(userInstance);
+
+    const response: UserAPIResponse = await this.client.post(
+      PathUrl.User,
+      userPayload
+    );
+
+    return plainToInstance(GenerateUserResponse, response);
   }
 
   /**
    * Actualiza un usuario utilizando un payload transformado.
    * @param userClass - Clase del usuario para la transformación (por ejemplo, `UserPayer`).
-   * @param payload - Objeto que debe ser una instancia o JSON del usuario.
+   * @param userInstance - Instancia del usuario a actualizar.
    * @returns Una promesa con la respuesta del usuario actualizado.
    */
-  public async updateUser<T extends UserPayer | UserCollector>(
-    userClass: new () => T,
-    payload: Omit<T, "user_type">
-  ): Promise<UserResponse> {
-    const userInstance = plainToInstance(userClass, payload);
-    return this.client.put(PathUrl.User, userInstance);
+  public async updateUser<T extends UserPayerRequest | UserCollectorRequest>(
+    userInstance: T
+  ): Promise<GenerateUserResponse> {
+    const userPayload = instanceToPlain(userInstance);
+
+    const response: UserAPIResponse = await this.client.put(
+      PathUrl.User,
+      userPayload
+    );
+
+    return plainToInstance(GenerateUserResponse, response);
+  }
+
+  /**
+   * Actualiza parcialmente un usuario utilizando un payload transformado.
+   * @param userClass - Clase del usuario para la transformación (por ejemplo, `UserPayer` o `UserCollector`).
+   * @param userInstance - Objeto que debe ser una instancia o JSON del usuario.
+   * @returns Una promesa con la respuesta del usuario actualizado.
+   */
+  public async updateUserPartial<
+    T extends UserPayerRequest | UserCollectorRequest
+  >(userInstance: PartialWithUserId<T>): Promise<GenerateUserResponse> {
+    const validatedUserInstance = plainToInstance(
+      userInstance.constructor as new () => T,
+      userInstance,
+      {
+        excludeExtraneousValues: true,
+      }
+    );
+
+    const { user: existingUser } = await this.getUserOrFail(
+      validatedUserInstance
+    );
+
+    const updatedUserData = {
+      ...existingUser,
+      ...userInstance,
+    };
+
+    const updateDataToInstance = plainToInstance(
+      userInstance.constructor as new () => T,
+      updatedUserData
+    );
+
+    const userPayload = instanceToPlain(updateDataToInstance);
+
+    const response: UserAPIResponse = await this.client.put(
+      PathUrl.User,
+      userPayload
+    );
+
+    return plainToInstance(GenerateUserResponse, response);
   }
 
   /**
@@ -79,37 +129,86 @@ export abstract class RedPayBase implements IRoleActions {
    * @param payload - Objeto que debe ser una instancia de `UserPayer` o `UserCollector`.
    * @returns Una promesa con la respuesta del usuario verificado.
    */
-  public async verifyUser(
-    payload: UserPayer | UserCollector
-  ): Promise<UserResponse> {
+  public async getUser<T extends UserPayerRequest | UserCollectorRequest>(
+    userInstance: T
+  ): Promise<GenerateUserResponse> {
+    const userPayload = instanceToPlain(userInstance);
+
     const userParams: UserParams = {
-      enroller_user_id: payload.enroller_user_id,
-      user_type:
-        payload instanceof UserPayer ? UserType.PAYER : UserType.COLLECTOR,
+      enroller_user_id: userPayload.enroller_user_id,
+      user_type: userPayload.user_type,
     };
 
-    return this.client.get(PathUrl.UserVerify, userParams);
+    const response: UserAPIResponse = await this.client.get(
+      PathUrl.UserVerify,
+      userParams
+    );
+
+    return plainToInstance(GenerateUserResponse, response);
+  }
+
+  /**
+   * Verifica un usuario o falla.
+   * @param payload - Objeto que debe ser una instancia de `UserPayer` o `UserCollector`.
+   * @returns Una promesa con la respuesta del usuario verificado.
+   * @throws Error - Si la solicitud falla.
+   */
+  public async getUserOrFail<T extends UserPayerRequest | UserCollectorRequest>(
+    userInstance: T
+  ): Promise<GenerateUserResponse> {
+    const userPayload = instanceToPlain(userInstance);
+
+    const userParams: UserParams = {
+      enroller_user_id: userPayload.enroller_user_id,
+      user_type: userPayload.user_type,
+    };
+
+    const response: UserAPIResponse = await this.client.getOrFail(
+      PathUrl.UserVerify,
+      userParams
+    );
+
+    return plainToInstance(GenerateUserResponse, response);
   }
 
   /**
    * Valida un token.
-   * @param payload - Objeto que contiene la información necesaria para validar el token.
+   * @param validateTokenInstance - Clase de validación de token (por ejemplo, `ValidateTokenRequest`).
    * @returns Una promesa con el resultado de la validación.
    */
   public async validateToken(
-    payload: ValidateToken
-  ): Promise<ValidateResponse> {
-    return this.client.post(PathUrl.ValidateToken, payload);
+    validateTokenInstance: ValidateTokenRequest
+  ): Promise<ValidateTokenResponse> {
+    const validateTokenPayload = instanceToPlain(validateTokenInstance);
+    const response: IValidateTokenAPIResponse = await this.client.post(
+      PathUrl.ValidateToken,
+      validateTokenPayload
+    );
+
+    return plainToInstance(ValidateTokenResponse, response);
   }
 
   /**
    * Valida una autorización.
-   * @param payload - Objeto que contiene la información necesaria para validar la autorización.
-   * @returns Una promesa con el resultado de la validación.
+   * @param validateAuthorizationInstance - Instancia de validación de autorización.
+   * @returns Una promesa con el resultado de la validación de la autorización.
    */
-  public async validateAuthorization(
-    payload: ValidateAuthorizationRequest
-  ): Promise<ValidateAuthorizationResponse> {
-    return this.client.post(PathUrl.ValidateAuthorization, payload);
+  public async validateAuthorization<
+    T extends
+      | ValidateAuthorizationCollectorRequest
+      | ValidateAuthorizationPayerRequest
+  >(
+    validateAuthorizationInstance: T
+  ): Promise<ValidationAuthorizationResponse> {
+    const validateAuthorizationPayload = instanceToPlain(
+      validateAuthorizationInstance
+    );
+
+    const response: ValidateAuthorizationResponse = await this.client.post(
+      PathUrl.ValidateAuthorization,
+      validateAuthorizationPayload
+    );
+
+    return plainToInstance(ValidationAuthorizationResponse, response);
   }
 }
