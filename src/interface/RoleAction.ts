@@ -1,22 +1,20 @@
-import { UserCollector, UserPayer } from "../model";
 import {
-  Authorize,
-  ChargebackRequest,
-  RevokeRequest,
-  ValidateAuthorizationCollector,
-  ValidateAuthorizationPayer,
-  ValidateToken,
-} from "../types";
-import { IAuthorizeResponse } from "./Authorize";
-import { IChargebackResponse } from "./Chargeback";
-import { IRevokeResponse } from "./Revoke";
-import { ITokenBase, ITokenResponse } from "./Token";
-import { IUserCollectorResponse, IUserPayerResponse } from "./User";
-import {
-  IValidateAuthorizationCollectorResponse,
-  IValidateAuthorizationPayerResponse,
-} from "./ValidateAuthorization";
-import { IValidateWithData, IValidateWithoutData } from "./ValidateToken";
+  AuthorizeRequest,
+  GenerateTokenResponse,
+  RevokeTokenRequest,
+  TokenBase,
+  UserCollectorRequest,
+  UserPayerRequest,
+  GenerateUserResponse,
+  ValidateTokenRequest,
+  ValidateTokenResponse,
+  RevokeTokenResponse,
+  AuthorizeResponse,
+  ValidateAuthorizationCollectorRequest,
+  ValidateAuthorizationPayerRequest,
+  ValidationAuthorizationResponse,
+} from "../model";
+import { ChargebackRequest, ChargebackResponse } from "../model/Chargeback";
 
 /**
  * Interfaz que define las acciones comunes para los roles de integración (Collector y Payer).
@@ -24,55 +22,66 @@ import { IValidateWithData, IValidateWithoutData } from "./ValidateToken";
 export interface IRoleActions {
   /**
    * Crea un usuario en el sistema.
-   * @param tokenClass Clase del usuario a crear (UserPayer o UserCollector).
-   * @param payload Datos necesarios para crear el usuario.
+   * @param userInstance Instancia del usuario a crear.
    * @returns Una promesa con la respuesta del usuario creado.
    */
-  createUser<T extends UserPayer | UserCollector>(
-    tokenClass: new () => T,
-    payload: Omit<T, "user_type">
-  ): Promise<IUserCollectorResponse | IUserPayerResponse>;
+  createUser<T extends UserPayerRequest | UserCollectorRequest>(
+    userInstance: T
+  ): Promise<GenerateUserResponse>;
 
   /**
    * Actualiza un usuario existente.
-   * @param tokenClass Clase del usuario a actualizar (UserPayer o UserCollector).
-   * @param payload Datos actualizados del usuario.
+   * @param userInstance Instancia del usuario a actualizar.
    * @returns Una promesa con la respuesta del usuario actualizado.
    */
-  updateUser<T extends UserPayer | UserCollector>(
-    tokenClass: new () => T,
-    payload: Omit<T, "user_type">
-  ): Promise<IUserCollectorResponse | IUserPayerResponse>;
+  updateUser<T extends UserPayerRequest | UserCollectorRequest>(
+    userInstance: T
+  ): Promise<GenerateUserResponse>;
+
+  /**
+   * Actualiza un usuario existente de forma parcial.
+   * @param userClass Clase del usuario a actualizar (UserPayer o UserCollector).
+   * @param userInstance Instancia del usuario a actualizar parcialmente.
+   * @returns Una promesa con la respuesta del usuario actualizado parcialmente.
+   */
+  updateUserPartial<T extends UserPayerRequest | UserCollectorRequest>(
+    userInstance: T
+  ): Promise<GenerateUserResponse>;
 
   /**
    * Verifica un usuario en el sistema.
-   * @param payload Datos del usuario a verificar.
+   * @param userInstance Instancia del usuario a buscar.
    * @returns Una promesa con la respuesta de verificación del usuario.
    */
-  verifyUser(
-    payload: UserPayer | UserCollector
-  ): Promise<IUserCollectorResponse | IUserPayerResponse>;
+  getUser<T extends UserPayerRequest | UserCollectorRequest>(
+    userInstance: T
+  ): Promise<GenerateUserResponse>;
+
+  getUserOrFail<T extends UserPayerRequest | UserCollectorRequest>(
+    userInstance: T
+  ): Promise<GenerateUserResponse>;
 
   /**
    * Valida una autorización en el sistema.
-   * @param payload Datos necesarios para validar la autorización.
+   * @param validateAuthorizationInstance - Instancia de validación de autorización.
    * @returns Una promesa con la respuesta de validación.
    */
-  validateAuthorization(
-    payload: ValidateAuthorizationCollector | ValidateAuthorizationPayer
-  ): Promise<
-    | IValidateAuthorizationCollectorResponse
-    | IValidateAuthorizationPayerResponse
-  >;
+  validateAuthorization<
+    T extends
+      | ValidateAuthorizationCollectorRequest
+      | ValidateAuthorizationPayerRequest
+  >(
+    validateAuthorizationInstance: T
+  ): Promise<ValidationAuthorizationResponse>;
 
   /**
    * Valida un token en el sistema.
-   * @param payload Datos necesarios para validar el token.
+   * @param validateTokenInstance - Instancia de `ValidateTokenRequest` que contiene los datos necesarios para validar un token.
    * @returns Una promesa con la respuesta de validación.
    */
   validateToken(
-    payload: ValidateToken
-  ): Promise<IValidateWithData | IValidateWithoutData>;
+    validateTokenInstance: ValidateTokenRequest
+  ): Promise<ValidateTokenResponse>;
 }
 
 /**
@@ -81,28 +90,28 @@ export interface IRoleActions {
 export interface RoleActionsER extends IRoleActions {
   /**
    * Genera un token en el sistema.
-   * @param tokenClass Clase del token a generar.
-   * @param payload Datos necesarios para generar el token.
+   * @param tokenInstance - Instancia del token a generar.
    * @returns Una promesa con la respuesta del token generado.
    */
-  generateToken<T extends ITokenBase>(
-    tokenClass: new () => T,
-    payload: T
-  ): Promise<ITokenResponse>;
+  generateToken<T extends TokenBase>(
+    tokenInstance: T
+  ): Promise<GenerateTokenResponse>;
 
   /**
    * Revoca un token existente.
-   * @param payload Datos necesarios para revocar el token.
+   * @param revokeInstance - Instancia de `RevokeToken` que contiene los datos necesarios para revocar un token.
    * @returns Una promesa con la respuesta de revocación.
    */
-  revokeToken(payload: RevokeRequest): Promise<IRevokeResponse>;
+  revokeToken(revokeInstance: RevokeTokenRequest): Promise<RevokeTokenResponse>;
 
   /**
    * Realiza un chargeback en el sistema.
-   * @param payload Datos necesarios para realizar el chargeback.
+   * @param chargebackInstance - Instancia de `Chargeback` que contiene los datos necesarios para realizar el chargeback.
    * @returns Una promesa con la respuesta del chargeback.
    */
-  chargeback(payload: ChargebackRequest): Promise<IChargebackResponse>;
+  generateChargeback(
+    chargebackInstance: ChargebackRequest
+  ): Promise<ChargebackResponse>;
 }
 
 /**
@@ -111,8 +120,10 @@ export interface RoleActionsER extends IRoleActions {
 export interface RoleActionsEP extends IRoleActions {
   /**
    * Autoriza un token en el sistema.
-   * @param payload Datos necesarios para autorizar el token.
+   * @param authorizeInstance - Instancia de `Authorize` que contiene los datos necesarios para autorizar un token.
    * @returns Una promesa con la respuesta de autorización.
    */
-  authorizeToken(payload: Authorize): Promise<IAuthorizeResponse>;
+  authorizeToken(
+    authorizeInstance: AuthorizeRequest
+  ): Promise<AuthorizeResponse>;
 }
