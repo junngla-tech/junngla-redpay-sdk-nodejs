@@ -1,6 +1,6 @@
-import { Filler } from "../model";
+import { SignedAuthorizationAccount } from "../model";
 
-export interface IChargebackResponse {
+export interface IChargebackAPIResponse {
   operation_uuid: string;
   chargeback: IChargeback;
   signature: string;
@@ -12,7 +12,7 @@ interface IChargeback {
   settlement_uuid: string;
   enroller_user_id: string;
   amount: number;
-  filler: Filler;
-  debit_filler?: Filler;
+  filler: SignedAuthorizationAccount;
+  debit_filler?: SignedAuthorizationAccount;
   signature: string;
 }
