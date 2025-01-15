@@ -39,3 +39,8 @@ export * from "./services";
  * @module types
  */
 export * from "./types";
+
+/**
+ * Excepciones personalizadas que se lanzan en caso de errores o problemas en la ejecución de los servicios.
+ */
+export * from "./errors";
