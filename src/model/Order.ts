@@ -1,18 +1,24 @@
-import { Expose } from "class-transformer";
+import { Expose, Transform } from "class-transformer";
+import { ClassBase } from "./ClassBase";
 
-export class Order {
+export class Order extends ClassBase<Order> {
   @Expose()
   uuid!: string;
 
   @Expose()
-  status_code!: string;
+  private is_confirmed: boolean = false;
 
   @Expose()
-  reusability!: number;
-
-  @Expose()
-  is_confirmed!: boolean;
+  @Transform(({ value }) => value ?? 1)
+  reusability?: number;
 
   @Expose()
   revoked_at?: Date | null;
+
+  /**
+   * Setter que siempre establece el estado de confirmación a `true`.
+   */
+  set isConfirmed(_value: boolean) {
+    this.is_confirmed = true;
+  }
 }
