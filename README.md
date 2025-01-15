@@ -15,6 +15,9 @@ RedPay SDK NodeJS es una biblioteca diseñada para facilitar la integración con
      - [Validación de token (opcional)](#validación-de-token-opcional)
      - [Validación de autorización](#validación-de-autorización)
      - [Detalles de la devolución](#detalles-de-la-devolución)
+     - [Procesar Webhook de pre-autorización](#procesar-webhook-de-pre-autorización)
+        - [Métodos Principales](#métodos-principales)
+        - [Métodos Abstractos](#métodos-abstractos)
 4. [Enrolador Pagador (billetera digital)](#enrolador-pagador-billetera-digital)
    - [Configuración inicial](#configuración-inicial-1)
    - [RedPayService (Enrolador Pagador)](#redpayservice-enrolador-pagador)
@@ -75,7 +78,6 @@ const certificates = new Certificate({
   cert_path: "certificate.crt",
 });
 
-
 const secrets = new Secrets({
   integrity: "90d966f496e3a3831ee62e55d4656471c5f6508b",
   chargeback: "4B3C60D59fA9EE7D3dC837Ff18e3d4b7fCcED2fe674",
@@ -90,7 +92,6 @@ const accounts = new Accounts({
     type: AccountAuthorization.CORRIENTE,
   }),
 });
-
 
 RedPayConfigProvider.getInstance().setConfig({
   type: Enroller.COLLECTOR,
@@ -300,7 +301,7 @@ import { RedPayService, ChargebackRequest } from "redpay-sdk-nodejs";
 const chargeback = new ChargebackRequest({
   user: userCollector,
   amount: 1000, // Monto a devolver (puede ser parcial o total)
-  authorization
+  authorization,
 });
 
 const service = new RedPayService();
@@ -309,6 +310,59 @@ try {
   const chargebackCreated = await service.generateChargeback(chargeback);
 } catch (e) {
   console.log("Error al generar devolución", e);
+}
+```
+
+### Procesar Webhook de pre-autorización
+
+La clase abstracta `WebhookPreAuthorize` permite procesar webhooks de pre-autorización siguiendo un flujo predefinido. Proporciona una estructura base que incluye la validación de la firma (`signature`), la verificación de si el webhook es informativo, el estado de revocación de la orden, y la validación de reutilización de órdenes. Además, genera dos tipos de eventos dependiendo de la naturaleza del webhook:
+
+1. `onInfoEvent`: Disparado cuando se trata de un webhook informativo.
+2. `onPreAuthorizeEvent`: Disparado cuando el webhook de pre-autorización es exitoso.
+
+La clase está diseñada para ser extendida por los desarrolladores, quienes deben implementar ciertos métodos abstractos para manejar las órdenes y los eventos específicos de su caso de uso.
+
+#### Métodos Principales
+
+1. `processWebhook`: Procesa el webhook ejecutando una secuencia que incluye:
+   - Validación de la firma (`validateSignature`).
+   - Obtención de la orden (`getOrder`).
+   - Verificación del estado de revocación de la orden (`checkIfOrderIsRevoked`).
+   - Validación opcional de reutilización de la orden (`validateOrderReuse`).
+   - Actualización del estado de la orden (`isConfirmed`)
+   - Ejecución del evento correspondiente: `onPreAuthorizeEvent` o `onInfoEvent`.
+
+#### Métodos Abstractos
+
+Estos métodos deben ser implementados por las subclases:
+
+- `getOrder`: Recupera una orden asociada a un token.
+- `validateOrderReuse`: Valida si una orden puede ser reutilizada (opcional).
+- `onInfoEvent`: Maneja eventos informativos del webhook.
+- `onPreAuthorizeEvent`: Maneja eventos de pre-autorización.
+
+**Ejemplo de Implementación: Procesar Webhook de pre-autorización**
+
+```typescript
+import { Order, WebhookPreAuthorization, WebhookPreAuthorize } from "redpay-sdk-nodejs";
+
+export class WebhookRedPay extends WebhookPreAuthorize {
+
+    async getOrder(token_uuid: string): Promise<Order> {
+        // <Su lógica para obtener la orden>
+        return new Order({
+            uuid: token_uuid,
+            reusability: 1
+        });
+    }
+
+    async onPreAuthorizeEvent(webhook: WebhookPreAuthorization, order: Order): Promise<void> {
+        console.log("Pre-autorización procesada");
+    }
+
+    async onInfoEvent(webhook: WebhookPreAuthorization): Promise<void> {
+        console.log("Evento informativo recibido");
+    }
 }
 ```
 
@@ -481,7 +535,10 @@ Para utilizar este método, debe definir uno o ambos de los siguientes campos: `
 **Ejemplo de Implementación: Validación de autorización**
 
 ```typescript
-import { RedPayService, ValidateAuthorizationPayerRequest } from "redpay-sdk-nodejs";
+import {
+  RedPayService,
+  ValidateAuthorizationPayerRequest,
+} from "redpay-sdk-nodejs";
 
 const validateAuthorizationRequest = new ValidateAuthorizationPayerRequest({
   user: userPayer,
@@ -492,7 +549,9 @@ const validateAuthorizationRequest = new ValidateAuthorizationPayerRequest({
 const service = new RedPayService();
 
 try {
-  const authorizationValidated = await service.validateAuthorization(validateAuthorizationRequest);
+  const authorizationValidated = await service.validateAuthorization(
+    validateAuthorizationRequest
+  );
 } catch (e) {
   console.log("Error al validar la autorización", e);
 }
