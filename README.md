@@ -15,7 +15,7 @@ RedPay SDK NodeJS es una biblioteca diseñada para facilitar la integración con
      - [Validación de token (opcional)](#validación-de-token-opcional)
      - [Validación de autorización](#validación-de-autorización)
      - [Detalles de la devolución](#detalles-de-la-devolución)
-     - [Procesar Webhook de pre-autorización](#procesar-webhook-de-pre-autorización)
+     - [Gestión de autorizaciones](#gestión-de-autorizaciones)
         - [Métodos Principales](#métodos-principales)
         - [Métodos Abstractos](#métodos-abstractos)
 4. [Enrolador Pagador (billetera digital)](#enrolador-pagador-billetera-digital)
@@ -313,9 +313,9 @@ try {
 }
 ```
 
-### Procesar Webhook de pre-autorización
+### Gestión de autorizaciones
 
-La clase abstracta `WebhookPreAuthorize` permite procesar webhooks de pre-autorización siguiendo un flujo predefinido. Proporciona una estructura base que incluye la validación de la firma (`signature`), la verificación de si el webhook es informativo, el estado de revocación de la orden, y la validación de reutilización de órdenes. Además, genera dos tipos de eventos dependiendo de la naturaleza del webhook:
+La clase abstracta `RedPayAuthorizationManagement` permite procesar webhooks de pre-autorización siguiendo un flujo predefinido. Proporciona una estructura base que incluye la validación de la firma (`signature`), la verificación de si el webhook es informativo, el estado de revocación de la orden, y la validación de reutilización de órdenes. Además, genera dos tipos de eventos dependiendo de la naturaleza del webhook:
 
 1. `onInfoEvent`: Disparado cuando se trata de un webhook informativo.
 2. `onPreAuthorizeEvent`: Disparado cuando el webhook de pre-autorización es exitoso.
@@ -344,9 +344,9 @@ Estos métodos deben ser implementados por las subclases:
 **Ejemplo de Implementación: Procesar Webhook de pre-autorización**
 
 ```typescript
-import { Order, WebhookPreAuthorization, WebhookPreAuthorize } from "redpay-sdk-nodejs";
+import { Order, WebhookPreAuthorization, RedPayAuthorizationManagement } from "redpay-sdk-nodejs";
 
-export class WebhookRedPay extends WebhookPreAuthorize {
+export class RedPayManagement extends RedPayAuthorizationManagement {
 
     async getOrder(token_uuid: string): Promise<Order> {
         // <Su lógica para obtener la orden>

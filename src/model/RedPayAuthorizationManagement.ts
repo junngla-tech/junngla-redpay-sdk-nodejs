@@ -5,7 +5,7 @@ import { RedPayIntegrity } from "../services";
 import { WebhookPreAuthorization } from "../types";
 import { Order } from "./Order";
 
-export abstract class WebhookPreAuthorize {
+export abstract class RedPayAuthorizationManagement {
   /**
    * Procesa un webhook de pre-autorización siguiendo un flujo predefinido: validación de firma, obtención de orden,
    * validación de código de estado, verificación de revocación, validación de reutilización y evento de pre-autorización.
