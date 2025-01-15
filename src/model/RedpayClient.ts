@@ -9,7 +9,8 @@ import * as fs from "fs";
 import { RedPayConfigProvider } from "../provider";
 import { RedPayEnvironment } from "../enum";
 import { RedPayIntegrity } from "../services/RedPayIntegrity";
-import { IError, IRedPayConfig } from "../interface";
+import { IRedPayConfig } from "../interface";
+import { InvalidSignatureError } from "../errors";
 
 /**
  * Cliente RedPay para realizar solicitudes HTTP firmadas y validar integridad.
@@ -92,10 +93,7 @@ export class RedPayClient {
         );
 
         if (!signatureIsValid) {
-          return Promise.reject({
-            message: "Invalid signature",
-            signature: response?.data?.signature,
-          } as IError);
+          return Promise.reject(new InvalidSignatureError());
         }
 
         return response;

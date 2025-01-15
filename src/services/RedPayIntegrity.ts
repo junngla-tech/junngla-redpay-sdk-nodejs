@@ -1,6 +1,7 @@
 import * as crypto from "crypto";
 import * as jsonabc from "jsonabc";
 import { BinaryLike } from "crypto";
+import { InvalidSignatureError } from "../errors";
 
 /**
  * Interfaz que representa un objeto firmado.
@@ -109,7 +110,7 @@ export class RedPayIntegrity {
     secret: string
   ): void => {
     if (!this.validateSignature(subject, secret)) {
-      throw new Error("Invalid signature");
+      throw new InvalidSignatureError();
     }
   };
 }
