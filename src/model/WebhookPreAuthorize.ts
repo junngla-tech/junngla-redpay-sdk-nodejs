@@ -5,9 +5,9 @@ import { RedPayIntegrity } from "../services";
 import { WebhookPreAuthorization } from "../types";
 import { Order } from "./Order";
 
-export abstract class Webhook {
+export abstract class WebhookPreAuthorize {
   /**
-   * Procesa un webhook siguiendo un flujo predefinido: validación de firma, obtención de orden,
+   * Procesa un webhook de pre-autorización siguiendo un flujo predefinido: validación de firma, obtención de orden,
    * validación de código de estado, verificación de revocación, validación de reutilización y evento de pre-autorización.
    *
    * @param {WebhookPreAuthorization} webhook - El payload del webhook que se procesa.
@@ -22,6 +22,7 @@ export abstract class Webhook {
     if (isValid) {
       this.checkIfOrderIsRevoked(order);
       this.validateOrderReuse(order);
+      this.isConfirmed(order);
       await this.onPreAuthorizeEvent(webhook, order);
     } else {
       await this.onInfoEvent(webhook);
@@ -64,6 +65,17 @@ export abstract class Webhook {
   }
 
   /**
+   * Establece el estado de confirmación de una orden a `true`.
+   *
+   * @param {Order} order - La orden que se confirma.
+   * @returns {Order} La orden con el estado de confirmación actualizado.
+   */
+  private isConfirmed(order: Order): Order {
+    order.isConfirmed
+    return order
+  }
+
+  /**
    * Valida si una orden excede el límite de reutilización permitido.
    *
    * @param {Order} order - La orden que se valida.
@@ -73,7 +85,7 @@ export abstract class Webhook {
     const count = this.countAuthorizationByOrder(order.uuid);
     if (count === -1) return;
 
-    if (order.reusability <= count)
+    if (order.reusability! <= count)
       throw new OrderReuseLimitError();
   }
 

@@ -14,4 +14,4 @@ export * from './Token';
 export * from './User';
 export * from './ValidateAuthorization';
 export * from './ValidateToken';
-export * from './Webhook';
+export * from './WebhookPreAuthorize';
