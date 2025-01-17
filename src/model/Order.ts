@@ -3,10 +3,10 @@ import { ClassBase } from "./ClassBase";
 
 export class Order extends ClassBase<Order> {
   @Expose()
-  uuid!: string;
+  token_uuid!: string;
 
   @Expose()
-  private is_confirmed: boolean = false;
+  user_id!: string;
 
   @Expose()
   @Transform(({ value }) => value ?? 1)
@@ -14,11 +14,4 @@ export class Order extends ClassBase<Order> {
 
   @Expose()
   revoked_at?: Date | null;
-
-  /**
-   * Setter que siempre establece el estado de confirmación a `true`.
-   */
-  set isConfirmed(_value: boolean) {
-    this.is_confirmed = true;
-  }
 }

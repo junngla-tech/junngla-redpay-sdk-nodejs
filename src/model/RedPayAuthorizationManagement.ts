@@ -1,11 +1,27 @@
-import { STATUS_CODE_OK } from "../config/constants";
-import { OrderIsRevokedError, OrderReuseLimitError } from "../errors";
+import {
+  RETRY_LIMIT,
+  STATUS_CODE_OK,
+  STATUS_CODE_RETRY,
+} from "../config/constants";
+import { OrderIsRevokedError, OrderReuseLimitError, ProcessAuthorizeError } from "../errors";
 import { RedPayConfigProvider } from "../provider";
-import { RedPayIntegrity } from "../services";
+import { RedPayIntegrity, RedPayService } from "../services";
 import { WebhookPreAuthorization } from "../types";
+import { AuthorizeOrder } from "./AuthorizeOrder";
 import { Order } from "./Order";
+import { ValidateAuthorizationCollectorRequest } from "./ValidateAuthorization";
+import { IError } from "../interface";
+import { UserCollectorRequest } from "./User";
 
 export abstract class RedPayAuthorizationManagement {
+  private intervalId: NodeJS.Timeout | null = null;
+  private isProcessing = false;
+  protected readonly redPayService: RedPayService;
+
+  constructor(redPayService?: RedPayService) {
+    this.redPayService = redPayService || new RedPayService();
+  }
+
   /**
    * Procesa un webhook de pre-autorización siguiendo un flujo predefinido: validación de firma, obtención de orden,
    * validación de código de estado, verificación de revocación, validación de reutilización y evento de pre-autorización.
@@ -22,7 +38,6 @@ export abstract class RedPayAuthorizationManagement {
     if (isValid) {
       this.checkIfOrderIsRevoked(order);
       this.validateOrderReuse(order);
-      this.isConfirmed(order);
       await this.onPreAuthorizeEvent(webhook, order);
     } else {
       await this.onInfoEvent(webhook);
@@ -65,14 +80,91 @@ export abstract class RedPayAuthorizationManagement {
   }
 
   /**
-   * Establece el estado de confirmación de una orden a `true`.
-   *
-   * @param {Order} order - La orden que se confirma.
-   * @returns {Order} La orden con el estado de confirmación actualizado.
+   * Inicia el procesamiento periódico de órdenes.
    */
-  private isConfirmed(order: Order): Order {
-    order.isConfirmed
-    return order
+  public start(): void {
+    if (this.intervalId) return; 
+
+    this.intervalId = setInterval(async () => {
+        if (this.isProcessing) return;
+        this.isProcessing = true; 
+
+        try {
+            const orders = await this.pendingAuthorizeOrders(); 
+
+            if (orders.length === 0) return this.stop();
+
+            await this.processAuthorizeOrders(orders); 
+        } catch (error) {
+          throw new ProcessAuthorizeError()
+        } finally {
+            this.isProcessing = false;
+        }
+    }, 1000);
+}
+
+  /**
+   * Detiene el procesamiento periódico de órdenes.
+   */
+  public stop(): void {
+    if (!this.intervalId) return;
+
+    clearInterval(this.intervalId);
+    this.intervalId = null;
+    this.isProcessing = false;
+  }
+
+  /**
+   * Procesa múltiples autorizaciones de órdenes.
+   */
+  private async processAuthorizeOrders(authorizeOrders: AuthorizeOrder[]): Promise<void> {
+    for (const order of authorizeOrders) {
+      await this.processSingleAuthorization(order);
+    }
+  }
+
+  /**
+   * Procesa una sola autorización de orden.
+   */
+  private async processSingleAuthorization(authorizeOrder: AuthorizeOrder): Promise<void> {
+    try {
+      
+      const response = await this.redPayService.validateAuthorization(
+        new ValidateAuthorizationCollectorRequest({
+          authorization_uuid: authorizeOrder.authorization_uuid,
+          user: new UserCollectorRequest({ user_id: authorizeOrder.user_id }),
+        })
+      );
+
+      await this.onSuccess(authorizeOrder, response.status_code!);
+    } catch (err) {
+      await this.handleAuthorizationError(authorizeOrder, err as IError);
+    }
+  }
+
+  /**
+   * Maneja errores de autorización.
+   */
+  private async handleAuthorizationError(authorizeOrder: AuthorizeOrder, error: IError): Promise<void> {
+    if (error.data?.status_code === STATUS_CODE_RETRY) {
+      await this.retryAuthorization(authorizeOrder);
+    } else {
+      // TODO: Verificar que estado de error se debe enviar `uknown`.
+      await this.onError(authorizeOrder, error.data?.status_code || "unknown");
+    }
+  }
+
+  /**
+   * Reintenta procesar una autorización con límite de intentos.
+   */
+  private async retryAuthorization(authorizeOrder: AuthorizeOrder, retry = 1): Promise<void> {
+
+    if (retry > RETRY_LIMIT) {
+      return await this.onError(authorizeOrder, STATUS_CODE_RETRY);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await this.processSingleAuthorization(authorizeOrder);
   }
 
   /**
@@ -82,11 +174,10 @@ export abstract class RedPayAuthorizationManagement {
    * @throws {OrderReuseLimitError} Si la orden ha excedido el límite de reutilización.
    */
   private validateOrderReuse(order: Order): void {
-    const count = this.countAuthorizationByOrder(order.uuid);
+    const count = this.countAuthorizationByOrder(order.token_uuid);
     if (count === -1) return;
 
-    if (order.reusability! <= count)
-      throw new OrderReuseLimitError();
+    if (order.reusability! <= count) throw new OrderReuseLimitError();
   }
 
   /**
@@ -104,6 +195,20 @@ export abstract class RedPayAuthorizationManagement {
   }
 
   /**
+   * Obtiene una orden asociada a un token UUID. Este método debe ser implementado por las subclases.
+   *
+   * @abstract
+   * @param {string} token_uuid - El identificador único del token.
+   * @returns {Promise<Order>} Una promesa que se resuelve con la orden obtenida.
+   */
+  abstract getOrder(token_uuid: string): Promise<Order>;
+
+  /**
+   * Método abstracto para obtener órdenes pendientes de autorización.
+   */
+  abstract pendingAuthorizeOrders(): Promise<AuthorizeOrder[]>;
+
+  /**
    * Maneja el evento de pre-autorización. Este método debe ser implementado por las subclases.
    *
    * @abstract
@@ -117,19 +222,26 @@ export abstract class RedPayAuthorizationManagement {
   ): Promise<void>;
 
   /**
-   * Obtiene una orden asociada a un token UUID. Este método debe ser implementado por las subclases.
-   *
-   * @abstract
-   * @param {string} token_uuid - El identificador único del token.
-   * @returns {Promise<Order>} Una promesa que se resuelve con la orden obtenida.
-   */
-  abstract getOrder(token_uuid: string): Promise<Order>;
-
-  /**
    * Maneja eventos informativos del webhook. Este método debe ser implementado por las subclases.
    *
    * @abstract
    * @param {WebhookPreAuthorization} webhook - El payload del webhook.
    */
   abstract onInfoEvent(webhook: WebhookPreAuthorization): Promise<void>;
+
+  /**
+   * Evento abstracto para manejar el éxito del procesamiento de una autorización de orden.
+   */
+  abstract onSuccess(
+    authorizeOrder: AuthorizeOrder,
+    status_code: string
+  ): Promise<void>;
+
+  /**
+   * Evento abstracto para manejar errores durante el procesamiento de una orden.
+   */
+  abstract onError(
+    authorizeOrder: AuthorizeOrder,
+    status_code: string
+  ): Promise<void>;
 }
