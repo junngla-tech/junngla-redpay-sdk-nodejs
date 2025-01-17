@@ -1,19 +1,14 @@
-import { IError } from "../interface";
+import { IError, RedPayError } from "../interface";
 
 export abstract class BaseError extends Error {
-  public operation_uuid?: string;
-  public message: string;
-  public status_code_redpay?: string;
-  public status_code?: number;
-  public signature?: string;
+  public status: number;
+  public data: RedPayError;
 
-  constructor({ operation_uuid, message, status_code, signature }: IError) {
-    super(message);
+  constructor({ status, data }: IError) {
+    super(data.message);
     Object.setPrototypeOf(this, new.target.prototype);
-    this.operation_uuid = operation_uuid;
-    this.message = message;
-    this.status_code = status_code;
-    this.signature = signature;
+    this.status = status;
+    this.data = data;
 
     Error.captureStackTrace(this, this.constructor);
   }
@@ -24,11 +19,8 @@ export abstract class BaseError extends Error {
    */
   serializeError(): IError {
     return {
-      operation_uuid: this.operation_uuid,
-      message: this.message,
-      status_code_redpay: this.status_code_redpay,
-      status_code: this.status_code,
-      signature: this.signature,
+      status: this.status,
+      data: this.data,
     };
   }
 }
