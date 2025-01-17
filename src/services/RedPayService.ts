@@ -1,11 +1,7 @@
 import { Enroller } from "../enum";
 import { RedPayConfigProvider } from "../provider";
 import { RoleActionsER, RoleActionsEP, IRoleActions } from "../interface";
-import {
-  RedPayDualService,
-  RedPayEPService,
-  RedPayERService,
-} from "./internal";
+import { RedPayDualService, RedPayEPService, RedPayERService } from "./internal";
 
 /**
  * Clase principal para manejar servicios de RedPay según el tipo de enrolador.
@@ -16,7 +12,7 @@ export class RedPayService {
    * Instancia del servicio seleccionado dinámicamente.
    * Puede ser un `RedPayERService`, `RedPayEPService` o `RedPayDualService`.
    */
-  private serviceInstance: IRoleActions | RoleActionsER | RoleActionsEP;
+  private serviceInstance: RoleActionsER | RoleActionsEP;
 
   /**
    * Constructor de la clase `RedPayService`.
@@ -31,7 +27,7 @@ export class RedPayService {
    * @returns Instancia del servicio configurado (`RedPayERService`, `RedPayEPService` o `RedPayDualService`).
    * @throws Error Si el tipo de enrolador no es soportado.
    */
-  private initializeService(): IRoleActions | RoleActionsER | RoleActionsEP {
+  private initializeService(): RoleActionsER | RoleActionsEP {
     const config = RedPayConfigProvider.getInstance().getConfig();
 
     switch (config.type) {
@@ -52,7 +48,7 @@ export class RedPayService {
    * @returns `true` si el servicio es de tipo `COLLECTOR`, de lo contrario `false`.
    */
   private isERService(
-    service: IRoleActions | RoleActionsER | RoleActionsEP
+    service: RoleActionsER | RoleActionsEP
   ): service is RoleActionsER {
     return (
       service instanceof RedPayERService || service instanceof RedPayDualService
@@ -65,7 +61,7 @@ export class RedPayService {
    * @returns `true` si el servicio es de tipo `PAYER`, de lo contrario `false`.
    */
   private isEPService(
-    service: IRoleActions | RoleActionsER | RoleActionsEP
+    service: RoleActionsER | RoleActionsEP
   ): service is RoleActionsEP {
     return (
       service instanceof RedPayEPService || service instanceof RedPayDualService
@@ -107,7 +103,9 @@ export class RedPayService {
    * @param args Argumentos necesarios para realizar el chargeback.
    * @throws Error Si el método no está disponible para este tipo de servicio.
    */
-  public generateChargeback(...args: Parameters<RoleActionsER["generateChargeback"]>) {
+  public generateChargeback(
+    ...args: Parameters<RoleActionsER["generateChargeback"]>
+  ) {
     if (this.isERService(this.serviceInstance)) {
       return this.serviceInstance.generateChargeback(...args);
     }

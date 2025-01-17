@@ -1,7 +1,8 @@
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { PathUrl } from "../../enum";
 import { IAuthorizeAPIResponse, RoleActionsEP } from "../../interface";
-import { AuthorizeRequest, AuthorizeResponse, RedPayBase } from "../../model";
+import { AuthorizeRequest, AuthorizeResponse } from "../../model";
+import { RedPayBase } from "./RedPayBase";
 
 /**
  * Servicio para operaciones relacionadas con Enroladores Pagadores (RedPayEP).

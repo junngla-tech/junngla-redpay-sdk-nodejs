@@ -6,21 +6,21 @@ import {
   IValidateAuthorizationCollectorAPIResponse,
   IValidateAuthorizationPayerAPIResponse,
   IValidateTokenAPIResponse,
-} from "../interface";
-import { UserParams } from "../types";
-import { RedPayClient } from "./RedPayClient";
+} from "../../interface";
+import { UserParams } from "../../types";
+import { RedPayClient } from "../../model/RedPayClient";
 import {
   UserCollectorRequest,
   UserPayerRequest,
   GenerateUserResponse,
-} from "./User";
-import { PathUrl } from "../enum";
-import { ValidateTokenRequest, ValidateTokenResponse } from "./ValidateToken";
+} from "../../model/User";
+import { PathUrl } from "../../enum";
+import { ValidateTokenRequest, ValidateTokenResponse } from "../../model/ValidateToken";
 import {
   ValidateAuthorizationCollectorRequest,
   ValidateAuthorizationPayerRequest,
   ValidationAuthorizationResponse,
-} from "./ValidateAuthorization";
+} from "../../model/ValidateAuthorization";
 
 type UserAPIResponse = IUserPayerAPIResponse | IUserCollectorAPIResponse;
 type ValidateAuthorizationResponse =

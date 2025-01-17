@@ -1,5 +1,5 @@
 import { RoleActionsEP, RoleActionsER } from "../../interface";
-import { RedPayBase } from "../../model";
+import { RedPayBase } from "./RedPayBase";
 import { RedPayEPService } from "./RedPayEPService";
 import { RedPayERService } from "./RedPayERService";
 

@@ -1,6 +1,5 @@
 import {
   GenerateTokenResponse,
-  RedPayBase,
   RevokeTokenRequest,
   RevokeTokenResponse,
   TokenBase,
@@ -14,6 +13,7 @@ import {
 import { PathUrl } from "../../enum";
 import { ChargebackRequest, ChargebackResponse } from "../../model/Chargeback";
 import { instanceToPlain, plainToInstance } from "class-transformer";
+import { RedPayBase } from "./RedPayBase";
 
 /**
  * Servicio para operaciones relacionadas con Enroladores Recaudadores (RedPayER).

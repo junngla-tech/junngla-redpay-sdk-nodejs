@@ -9,7 +9,7 @@ import * as fs from "fs";
 import { RedPayConfigProvider } from "../provider";
 import { RedPayEnvironment } from "../enum";
 import { RedPayIntegrity } from "../services/RedPayIntegrity";
-import { IRedPayConfig } from "../interface";
+import { IError, IRedPayConfig, RedPayError } from "../interface";
 import { InvalidSignatureError } from "../errors";
 
 /**
@@ -126,8 +126,8 @@ export class RedPayClient {
       if (axios.isAxiosError(error) && error.response) {
         throw {
           status: error.response.status,
-          data: error.response.data,
-        };
+          data: error.response.data as RedPayError,
+        } as IError;
       }
       throw new Error(`Unexpected error occurred during the request: ${error}`);
     }
