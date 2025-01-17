@@ -319,6 +319,8 @@ La clase abstracta `RedPayAuthorizationManagement` permite procesar webhooks de 
 
 1. `onInfoEvent`: Disparado cuando se trata de un webhook informativo.
 2. `onPreAuthorizeEvent`: Disparado cuando el webhook de pre-autorización es exitoso.
+3. `onSuccess`: Disparado cuando el proceso de autorización es exitoso.
+4. `onError`: Disparado cuando ocurre un error en el proceso de autorización.
 
 La clase está diseñada para ser extendida por los desarrolladores, quienes deben implementar ciertos métodos abstractos para manejar las órdenes y los eventos específicos de su caso de uso.
 
@@ -329,30 +331,45 @@ La clase está diseñada para ser extendida por los desarrolladores, quienes deb
    - Obtención de la orden (`getOrder`).
    - Verificación del estado de revocación de la orden (`checkIfOrderIsRevoked`).
    - Validación opcional de reutilización de la orden (`validateOrderReuse`).
-   - Actualización del estado de la orden (`isConfirmed`)
    - Ejecución del evento correspondiente: `onPreAuthorizeEvent` o `onInfoEvent`.
+
+2. `start`: Inicia el proceso de validación de autorización, ejecutando un `setInterval` que incluye:
+   - Obtención de las autorización de las órdenes pendientes (`processAuthorizeOrders`). Si no hay órdenes pendientes, se detiene el proceso (`stop`).
+   - Procesamiento de las autorizaciones pendientes (`processAuthorizeOrder`).
+      - Por cada autorización pendiente, se ejecuta el método `validateAuthorization` de RedPayService donde se obtiene el estado final de cada autorización pendiente: 
+        - Si la autorización es exitosa, se ejecuta el evento `onSuccess`.
+        - Si la autorización requiere reintentos, se realizan hasta un maximo de 3 por cada authorización pendiente.
+        - Si la autorización falla, se ejecuta el evento `onError`.
+
+3. `stop`: Detiene el proceso de validación de autorización.
 
 #### Métodos Abstractos
 
 Estos métodos deben ser implementados por las subclases:
 
+1. Procesamiento de los webhooks:
 - `getOrder`: Recupera una orden asociada a un token.
 - `validateOrderReuse`: Valida si una orden puede ser reutilizada (opcional).
 - `onInfoEvent`: Maneja eventos informativos del webhook.
 - `onPreAuthorizeEvent`: Maneja eventos de pre-autorización.
 
-**Ejemplo de Implementación: Procesar Webhook de pre-autorización**
+2. Procesamiento de las autorizaciones:
+- `processAuthorizeOrders`: Obtiene las órdenes pendientes de autorización.
+- `onSuccess`: Maneja eventos de autorización exitosa.
+- `onError`: Maneja eventos de autorización fallida.
+
+**Ejemplo de Implementación: Gestión de autorización**
 
 ```typescript
-import { Order, WebhookPreAuthorization, RedPayAuthorizationManagement } from "redpay-sdk-nodejs";
+import { Order, WebhookPreAuthorization, RedPayAuthorizationManagement, AuthorizeOrder } from "redpay-sdk-nodejs";
 
 export class RedPayManagement extends RedPayAuthorizationManagement {
 
     async getOrder(token_uuid: string): Promise<Order> {
         // <Su lógica para obtener la orden>
         return new Order({
-            uuid: token_uuid,
-            reusability: 1
+            token_uuid: token_uuid,
+            user_id: userCollector.user_id,
         });
     }
 
@@ -362,6 +379,33 @@ export class RedPayManagement extends RedPayAuthorizationManagement {
 
     async onInfoEvent(webhook: WebhookPreAuthorization): Promise<void> {
         console.log("Evento informativo recibido");
+    }
+
+    async pendingAuthorizeOrder(): Promise<AuthorizeOrder[]> {
+        // <Su lógica para obtener las órdenes pendientes>
+
+        // Cada autorización debe tener un objecto `AuthorizeOrder` con los siguientes campos:
+        // - token_uuid: string
+        // - authorization_uuid: string
+        // - user_id: string
+        // - is_confirmed: false
+
+        // Debe retornar un array de órdenes pendientes
+        return [];
+    }
+
+     async onSuccess(authorizeOrder: AuthorizeOrder, status_code: string): Promise<void> {
+        console.log("Orden autorizada exitosamente");
+        // <Su lógica para manejar la autorización exitosa, 
+        // actualizar el estado de la orden `is_confirmed: true`
+        // y `status_code: status_code` (00-000)
+     }
+
+    async onError(authorizeOrder: AuthorizeOrder, status_code: string): Promise<void> {
+        console.log("Error al autorizar la orden");
+        // <Su lógica para manejar la autorización fallida,
+        // actualizar el estado de la orden `is_confirmed: true`
+        // y `status_code: status_code` (código distinto de 00-000)
     }
 }
 ```
@@ -541,7 +585,7 @@ import {
 } from "redpay-sdk-nodejs";
 
 const validateAuthorizationRequest = new ValidateAuthorizationPayerRequest({
-  user: userPayer,
+  user: userCollector,
   authorization_uuid: "authorization_uuid",
   validation_uuid: "validation_uuid",
 });
