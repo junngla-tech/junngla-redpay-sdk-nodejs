@@ -315,7 +315,7 @@ try {
 
 ### Gestión de autorizaciones
 
-La clase abstracta `RedPayAuthorizationManagement` permite procesar webhooks de pre-autorización siguiendo un flujo predefinido. Proporciona una estructura base que incluye la validación de la firma (`signature`), la verificación de si el webhook es informativo, el estado de revocación de la orden, y la validación de reutilización de órdenes. Además, genera dos tipos de eventos dependiendo de la naturaleza del webhook:
+La clase abstracta `RedPayAuthorizationManagement` permite procesar webhooks de pre-autorización siguiendo un flujo predefinido y validar las autorizaciónes. Proporciona una estructura base que incluye la validación de la firma (`signature`), la verificación de si el webhook es informativo, el estado de revocación de la orden, la validación de reutilización de órdenes y procesar autorizaciones de ordenes pendientes. Además, genera cuatro tipos de eventos, dos dependiendo de la naturaleza del webhook y dos dependiendo del estado de la autorización:
 
 1. `onInfoEvent`: Disparado cuando se trata de un webhook informativo.
 2. `onPreAuthorizeEvent`: Disparado cuando el webhook de pre-autorización es exitoso.
@@ -354,7 +354,7 @@ Estos métodos deben ser implementados por las subclases:
 - `onPreAuthorizeEvent`: Maneja eventos de pre-autorización.
 
 2. Procesamiento de las autorizaciones:
-- `processAuthorizeOrders`: Obtiene las órdenes pendientes de autorización.
+- `pendingAuthorizeOrders`: Obtiene las órdenes pendientes de autorización.
 - `onSuccess`: Maneja eventos de autorización exitosa.
 - `onError`: Maneja eventos de autorización fallida.
 
@@ -381,7 +381,7 @@ export class RedPayManagement extends RedPayAuthorizationManagement {
         console.log("Evento informativo recibido");
     }
 
-    async pendingAuthorizeOrder(): Promise<AuthorizeOrder[]> {
+    async pendingAuthorizeOrders(): Promise<AuthorizeOrder[]> {
         // <Su lógica para obtener las órdenes pendientes>
 
         // Cada autorización debe tener un objecto `AuthorizeOrder` con los siguientes campos:
