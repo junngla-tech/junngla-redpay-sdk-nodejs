@@ -349,7 +349,7 @@ Estos métodos deben ser implementados por las subclases:
 
 1. Procesamiento de los webhooks:
 - `getOrder`: Recupera una orden asociada a un token.
-- `validateOrderReuse`: Valida si una orden puede ser reutilizada (opcional).
+- `countAuthorizationByOrder`: Valida si una orden necesita verificación de reutilización (opcional).
 - `onInfoEvent`: Maneja eventos informativos del webhook.
 - `onPreAuthorizeEvent`: Maneja eventos de pre-autorización.
 
@@ -361,15 +361,16 @@ Estos métodos deben ser implementados por las subclases:
 **Ejemplo de Implementación: Gestión de autorización**
 
 ```typescript
-import { Order, WebhookPreAuthorization, RedPayAuthorizationManagement, AuthorizeOrder } from "redpay-sdk-nodejs";
+import { Order, WebhookPreAuthorization, RedPayAuthorizationManager, AuthorizeOrder } from "redpay-sdk-nodejs";
 
-export class RedPayManagement extends RedPayAuthorizationManagement {
+export class RedPayManagemer extends RedPayAuthorizationManager {
 
-    async getOrder(token_uuid: string): Promise<Order> {
+    async getOrder(token_uuid: string, authorization_uuid: string): Promise<Order> {
         // <Su lógica para obtener la orden>
         return new Order({
             token_uuid: token_uuid,
             user_id: userCollector.user_id,
+            authorization_uuid: authorization_uuid,
         });
     }
 
@@ -379,6 +380,11 @@ export class RedPayManagement extends RedPayAuthorizationManagement {
 
     async onInfoEvent(webhook: WebhookPreAuthorization): Promise<void> {
         console.log("Evento informativo recibido");
+    }
+
+    async countAuthorizationByOrder(token_uuid: Order): number {
+        // <Su lógica para establecer el número de reutilizaciones de una orden, por defecto es 1>
+        return <su número de reutilizaciones>;
     }
 
     async pendingAuthorizeOrders(): Promise<AuthorizeOrder[]> {
