@@ -5,7 +5,7 @@ export * from './Certificate';
 export * from './Chargeback';
 export * from './ClassBase';
 export * from './Order';
-export * from './RedPayAuthorizationManagement';
+export * from './RedPayAuthorizationManager';
 export * from './RedPayClient';
 export * from './RedPayConfig';
 export * from './RevokeToken';
