@@ -33,10 +33,10 @@ export abstract class RedPayAuthorizationManager {
   public async processWebhook(webhook: WebhookPreAuthorization): Promise<void> {
     this.validateSignature(webhook);
 
-    const { token_uuid, operations: { authorization_uuid } } = webhook;
+    const { token_uuid } = webhook;
 
     // Flujo de procesamiento del webhook.
-    const order = await this.getOrder(token_uuid, authorization_uuid);
+    const order = await this.getOrder(token_uuid);
     const isValid = this.checkStatusCodeFromWebhook(webhook);
     if (isValid) {
       this.checkIfOrderIsRevoked(order);
@@ -213,10 +213,9 @@ export abstract class RedPayAuthorizationManager {
    *
    * @abstract
    * @param {string} token_uuid - El identificador único del token.
-   * @param {string} authorization_uuid - El identificador único de la autorización.
    * @returns {Promise<Order>} Una promesa que se resuelve con la orden obtenida.
    */
-  abstract getOrder(token_uuid: string, authorization_uuid: string): Promise<Order>;
+  abstract getOrder(token_uuid: string ): Promise<Order>;
 
   /**
    * Método abstracto para obtener órdenes pendientes de autorización.
