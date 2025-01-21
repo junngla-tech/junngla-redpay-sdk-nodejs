@@ -1,6 +1,5 @@
 import { Exclude, Expose, plainToInstance, Transform } from "class-transformer";
 import { SignedAuthorizationAccount } from "./SignedAuthorization";
-import { UserCollectorRequest } from "./User";
 import { ClassBase } from "./ClassBase";
 import { AuthorizationMode } from "../enum";
 import { RedPayConfigProvider } from "../provider";
@@ -8,10 +7,10 @@ import { RedPayConfigProvider } from "../provider";
 export class ChargebackRequest extends ClassBase<ChargebackRequest> {
   @Expose({ toClassOnly: true })
   @Exclude({ toPlainOnly: true })
-  user!: UserCollectorRequest;
+  user_id!: string;
 
   @Expose({ toPlainOnly: true })
-  @Transform(({ obj }) => obj.user.user_id)
+  @Transform(({ obj }) => obj.user_id)
   private enroller_user_id!: string;
 
   @Expose()

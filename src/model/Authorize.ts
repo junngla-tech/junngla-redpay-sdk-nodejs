@@ -1,5 +1,4 @@
 import { Exclude, Expose, Transform, Type } from "class-transformer";
-import { UserPayerRequest } from "./User";
 import { AuthorizationMode, TokenType } from "../enum";
 import { SignedAuthorizationAccount } from "./SignedAuthorization";
 import { ClassBase } from "./ClassBase";
@@ -19,10 +18,10 @@ class Data extends ClassBase<Data> {
 export class AuthorizeRequest extends ClassBase<AuthorizeRequest> {
   @Expose({ toClassOnly: true })
   @Exclude({ toPlainOnly: true })
-  user!: UserPayerRequest;
+  user_id!: string;
 
   @Expose({ toPlainOnly: true })
-  @Transform(({ obj }) => obj.user.user_id)
+  @Transform(({ obj }) => obj.user_id)
   private enroller_user_id!: string;
 
   @Expose()

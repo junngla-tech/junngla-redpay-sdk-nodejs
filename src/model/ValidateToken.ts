@@ -1,32 +1,26 @@
 import {
   Exclude,
   Expose,
-  instanceToPlain,
   Transform,
   Type,
 } from "class-transformer";
-import { UserCollectorRequest, UserPayerRequest } from "./User";
 import { ClassBase } from "./ClassBase";
-import { TokenType } from "../enum";
+import { TokenType, UserType } from "../enum";
 
 export class ValidateTokenRequest extends ClassBase<ValidateTokenRequest> {
   @Expose({ toClassOnly: true })
   @Exclude({ toPlainOnly: true })
-  user!: UserCollectorRequest | UserPayerRequest;
+  user_id!: string;
 
   @Expose({ toPlainOnly: true })
-  @Transform(({ obj }) => obj.user.user_id)
+  @Transform(({ obj }) => obj.user_id)
   private enroller_user_id!: string;
 
   @Expose()
   token_uuid!: string;
 
-  @Expose({ toPlainOnly: true })
-  @Transform(({ obj }) => {
-    const userPlain = instanceToPlain(obj.user);
-    return userPlain.user_type;
-  })
-  private user_type!: string;
+  @Expose()
+  user_type!: UserType;
 }
 
 export class ValidateTokenData {

@@ -7,7 +7,6 @@ import {
 } from "class-transformer";
 import { IData, IPaymentToken } from "../interface";
 import { UserType, TokenType } from "../enum";
-import { UserCollectorRequest } from "./User";
 import { ClassBase } from "./ClassBase";
 
 /**
@@ -60,12 +59,11 @@ export class TokenDataT4 extends ClassBase<TokenDataT4> implements IData {
 export abstract class TokenBase extends ClassBase<TokenBase> {
   @Expose({ toClassOnly: true })
   @Exclude({ toPlainOnly: true })
-  @Type(() => UserCollectorRequest)
-  user!: UserCollectorRequest;
+  user_id!: string;
 
   @Expose({ toPlainOnly: true })
   // @Exclude({ toClassOnly: true })
-  @Transform(({ obj }) => obj.user.user_id, { toPlainOnly: true })
+  @Transform(({ obj }) => obj.user_id, { toPlainOnly: true })
   private enroller_user_id!: string;
   /**
    * Descripción o detalle del token.

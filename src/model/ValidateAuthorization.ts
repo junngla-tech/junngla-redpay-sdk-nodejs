@@ -1,7 +1,7 @@
-import { Exclude, Expose, instanceToPlain, Transform } from "class-transformer";
-import { UserCollectorRequest, UserPayerRequest } from "./User";
+import { Exclude, Expose, Transform } from "class-transformer";
 import { ClassBase } from "./ClassBase";
 import { AuthorizeResponse } from "./Authorize";
+import { UserType } from "../enum";
 
 /**
  * Representa la estructura base para la validación de autorizaciones.
@@ -9,18 +9,14 @@ import { AuthorizeResponse } from "./Authorize";
 abstract class ValidateAuthorization extends ClassBase<ValidateAuthorization> {
   @Expose({ toClassOnly: true })
   @Exclude({ toPlainOnly: true })
-  user!: UserCollectorRequest | UserPayerRequest;
+  user_id!: string;
 
   @Expose({ toPlainOnly: true })
-  @Transform(({ obj }) => obj.user.user_id)
+  @Transform(({ obj }) => obj.user_id)
   private enroller_user_id!: string;
 
-  @Expose({ toPlainOnly: true })
-  @Transform(({ obj }) => {
-    const userPlain = instanceToPlain(obj.user);
-    return userPlain.user_type;
-  })
-  private user_type!: string;
+  @Expose()
+  user_type!: UserType;
 }
 
 /**
@@ -59,9 +55,7 @@ export class ValidateAuthorizationPayerRequest extends ValidateAuthorization {
   }
 }
 
-
 export class ValidationAuthorizationResponse extends AuthorizeResponse {
-  
   /**
    * Monto asociado al token.
    * Este campo se incluye en el rol recaudador (collector).
@@ -90,5 +84,3 @@ export class ValidationAuthorizationResponse extends AuthorizeResponse {
   @Expose()
   readonly extra_data?: string;
 }
-
-

@@ -1,14 +1,13 @@
 import { Exclude, Expose, Transform, Type } from "class-transformer";
-import { UserCollectorRequest } from "./User";
 import { ClassBase } from "./ClassBase";
 
 export class RevokeTokenRequest extends ClassBase<RevokeTokenRequest> {
   @Expose({ toClassOnly: true })
   @Exclude({ toPlainOnly: true })
-  user!: UserCollectorRequest;
+  user_id!: string;
 
   @Expose({ toPlainOnly: true })
-  @Transform(({ obj }) => obj.user.user_id)
+  @Transform(({ obj }) => obj.user_id)
   private enroller_user_id!: string;
 
   @Expose()
