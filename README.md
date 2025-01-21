@@ -16,8 +16,8 @@ RedPay SDK NodeJS es una biblioteca diseñada para facilitar la integración con
      - [Validación de autorización](#validación-de-autorización)
      - [Detalles de la devolución](#detalles-de-la-devolución)
      - [Gestión de autorizaciones](#gestión-de-autorizaciones)
-        - [Métodos Principales](#métodos-principales)
-        - [Métodos Abstractos](#métodos-abstractos)
+       - [Métodos Principales](#métodos-principales)
+       - [Métodos Abstractos](#métodos-abstractos)
 4. [Enrolador Pagador (billetera digital)](#enrolador-pagador-billetera-digital)
    - [Configuración inicial](#configuración-inicial-1)
    - [RedPayService (Enrolador Pagador)](#redpayservice-enrolador-pagador)
@@ -204,7 +204,7 @@ import {
 } from "redpay-sdk-nodejs";
 
 const tokenT0Request = new TokenT0Request({
-  user: userCollector,
+  user_id: userCollector.user_id,
   data: new TokenDataT0({
     amount: 1000,
   }),
@@ -227,7 +227,7 @@ try {
 import { RedPayService, RevokeTokenRequest } from "redpay-sdk-nodejs";
 
 const revokeTokenRequest = new RevokeTokenRequest({
-  user: userCollector,
+  user_id: userCollector.user_id,
   token_uuid: "token_uuid",
 });
 
@@ -243,11 +243,16 @@ try {
 **Ejemplo de Implementación: Validación de token**
 
 ```typescript
-import { RedPayService, ValidateTokenRequest } from "redpay-sdk-nodejs";
+import {
+  RedPayService,
+  ValidateTokenRequest,
+  UserType,
+} from "redpay-sdk-nodejs";
 
 const validateTokenRequest = new ValidateTokenRequest({
-  user: userCollector,
+  user_id: userCollector.user_id,
   token_uuid: "token_uuid",
+  user_type: UserType.COLLECTOR,
 });
 
 const service = new RedPayService();
@@ -269,11 +274,13 @@ El método `validateAuthorization` permite validar el estado final de una autori
 import {
   RedPayService,
   ValidateAuthorizationCollectorRequest,
+  UserType,
 } from "redpay-sdk-nodejs";
 
 const validateAuthorizationRequest = new ValidateAuthorizationCollectorRequest({
-  user: userCollector,
+  user_id: userCollector.user_id,
   authorization_uuid: "authorization_uuid",
+  user_type: UserType.COLLECTOR,
 });
 
 const service = new RedPayService();
@@ -299,7 +306,7 @@ Adicionalmente, si desea operar con el modelo devolución automática, se debe d
 import { RedPayService, ChargebackRequest } from "redpay-sdk-nodejs";
 
 const chargeback = new ChargebackRequest({
-  user: userCollector,
+  user_id: userCollector.user_id,,
   amount: 1000, // Monto a devolver (puede ser parcial o total)
   authorization,
 });
@@ -327,6 +334,7 @@ La clase está diseñada para ser extendida por los desarrolladores, quienes deb
 #### Métodos Principales
 
 1. `processWebhook`: Procesa el webhook ejecutando una secuencia que incluye:
+
    - Validación de la firma (`validateSignature`).
    - Obtención de la orden (`getOrder`).
    - Verificación del estado de revocación de la orden (`checkIfOrderIsRevoked`).
@@ -334,12 +342,13 @@ La clase está diseñada para ser extendida por los desarrolladores, quienes deb
    - Ejecución del evento correspondiente: `onPreAuthorizeEvent` o `onInfoEvent`.
 
 2. `start`: Inicia el proceso de validación de autorización, ejecutando un `setInterval` que incluye:
+
    - Obtención de las autorización de las órdenes pendientes (`processAuthorizeOrders`). Si no hay órdenes pendientes, se detiene el proceso (`stop`).
    - Procesamiento de las autorizaciones pendientes (`processAuthorizeOrder`).
-      - Por cada autorización pendiente, se ejecuta el método `validateAuthorization` de RedPayService donde se obtiene el estado final de cada autorización pendiente: 
-        - Si la autorización es exitosa, se ejecuta el evento `onSuccess`.
-        - Si la autorización requiere reintentos, se realizan hasta un maximo de 3 por cada authorización pendiente.
-        - Si la autorización falla, se ejecuta el evento `onError`.
+     - Por cada autorización pendiente, se ejecuta el método `validateAuthorization` de RedPayService donde se obtiene el estado final de cada autorización pendiente:
+       - Si la autorización es exitosa, se ejecuta el evento `onSuccess`.
+       - Si la autorización requiere reintentos, se realizan hasta un maximo de 3 por cada authorización pendiente.
+       - Si la autorización falla, se ejecuta el evento `onError`.
 
 3. `stop`: Detiene el proceso de validación de autorización.
 
@@ -348,12 +357,14 @@ La clase está diseñada para ser extendida por los desarrolladores, quienes deb
 Estos métodos deben ser implementados por las subclases:
 
 1. Procesamiento de los webhooks:
+
 - `getOrder`: Recupera una orden asociada a un token.
 - `countAuthorizationByOrder`: Valida si una orden necesita verificación de reutilización (opcional).
 - `onInfoEvent`: Maneja eventos informativos del webhook.
 - `onPreAuthorizeEvent`: Maneja eventos de pre-autorización.
 
 2. Procesamiento de las autorizaciones:
+
 - `pendingAuthorizeOrders`: Obtiene las órdenes pendientes de autorización.
 - `onSuccess`: Maneja eventos de autorización exitosa.
 - `onError`: Maneja eventos de autorización fallida.
@@ -365,26 +376,29 @@ import { Order, WebhookPreAuthorization, RedPayAuthorizationManager, AuthorizeOr
 
 export class RedPayManagemer extends RedPayAuthorizationManager {
 
-    async getOrder(token_uuid: string, authorization_uuid: string): Promise<Order> {
+    async getOrder(token_uuid: string): Promise<Order> {
         // <Su lógica para obtener la orden>
         return new Order({
             token_uuid: token_uuid,
             user_id: userCollector.user_id,
-            authorization_uuid: authorization_uuid,
+            reusability: 1, // Cantidad de veces que la orden puede recibir autorizaciones.
+            revoked_at: null, // Indica si la orden fue revocada con la fecha de revocación.
         });
     }
 
     async onPreAuthorizeEvent(webhook: WebhookPreAuthorization, order: Order): Promise<void> {
         console.log("Pre-autorización procesada");
+        // <Su lógica para manejar la pre-autorización>
     }
 
     async onInfoEvent(webhook: WebhookPreAuthorization): Promise<void> {
         console.log("Evento informativo recibido");
+        // <Su lógica para manejar el evento informativo>
     }
 
-    async countAuthorizationByOrder(token_uuid: Order): number {
-        // <Su lógica para establecer el número de reutilizaciones de una orden, por defecto es 1>
-        return <su número de reutilizaciones>;
+    async countAuthorizationByOrder(token_uuid: Order): number { // Opcional
+        // <Su lógica para obtener las autorizaciones realizadas de una orden>
+        return <su número de autorizaciones realizadas>;
     }
 
     async pendingAuthorizeOrders(): Promise<AuthorizeOrder[]> {
@@ -396,13 +410,13 @@ export class RedPayManagemer extends RedPayAuthorizationManager {
         // - user_id: string
         // - is_confirmed: false
 
-        // Debe retornar un array de órdenes pendientes
+        // Debe retornar un array de `AuthorizeOrder` con las órdenes pendientes de autorización.
         return [];
     }
 
      async onSuccess(authorizeOrder: AuthorizeOrder, status_code: string): Promise<void> {
         console.log("Orden autorizada exitosamente");
-        // <Su lógica para manejar la autorización exitosa, 
+        // <Su lógica para manejar la autorización exitosa,
         // actualizar el estado de la orden `is_confirmed: true`
         // y `status_code: status_code` (00-000)
      }
@@ -534,11 +548,16 @@ El método `validateToken` permite obtener detalles de un token. Se utiliza para
 **Ejemplo de Implementación: Validación de token**
 
 ```typescript
-import { RedPayService, ValidateTokenRequest } from "redpay-sdk-nodejs";
+import {
+  RedPayService,
+  ValidateTokenRequest,
+  UserType,
+} from "redpay-sdk-nodejs";
 
 const validateTokenRequest = new ValidateTokenRequest({
-  user: userPayer,
+  user_id: userPayer.user_id,
   token_uuid: "token_uuid",
+  user_type: UserType.PAYER,
 });
 
 const service = new RedPayService();
@@ -560,7 +579,7 @@ El método `authorizeToken` permite autorizar una transacción utilizando un tok
 import { RedPayService, AuthorizeRequest } from "redpay-sdk-nodejs";
 
 const authorizeRequest = new AuthorizeRequest({
-  user: userPayer,
+  user_id: userPayer.user_id,
   token_uuid: "token_uuid",
   amount: 1000, // Monto a autorizar (se obtiene desde la validación del token)
   token_type: TokenType.T0, // Tipo de token a autorizar (se obtiene desde la validación del token)
@@ -588,12 +607,14 @@ Para utilizar este método, debe definir uno o ambos de los siguientes campos: `
 import {
   RedPayService,
   ValidateAuthorizationPayerRequest,
+  UserType,
 } from "redpay-sdk-nodejs";
 
 const validateAuthorizationRequest = new ValidateAuthorizationPayerRequest({
-  user: userCollector,
+  user_id: userPayer.user_id,
   authorization_uuid: "authorization_uuid",
   validation_uuid: "validation_uuid",
+  user_type: UserType.PAYER,
 });
 
 const service = new RedPayService();
@@ -674,3 +695,11 @@ RedPayIntegrity.validateSignatureOrFail(signedObject, secret);
 const signedObject = RedPayIntegrity.getSignedObject(data, secret);
 console.log(signedObject);
 ```
+
+# Estado del SDK: Versión BETA
+
+El SDK se encuentra actualmente en su versión BETA. Estamos trabajando continuamente para mejorar su funcionalidad y confiabilidad. Valoramos enormemente tus comentarios y sugerencias, ya que son esenciales para optimizar esta herramienta.
+
+Si encuentras algún problema o deseas compartir tus ideas, no dudes en contactarnos a través del correo electrónico: soporteqri@junngla.com. Estamos aquí para ayudarte.
+
+Agradecemos tu confianza y colaboración durante esta etapa de desarrollo.
