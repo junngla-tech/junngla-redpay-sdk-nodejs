@@ -9,6 +9,9 @@ export class Order extends ClassBase<Order> {
   user_id!: string;
 
   @Expose()
+  amount!: number;
+
+  @Expose()
   @Transform(({ value }) => value ?? 1)
   reusability?: number;
 
