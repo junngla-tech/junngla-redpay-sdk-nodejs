@@ -12,7 +12,6 @@ import { AuthorizeOrder } from "./AuthorizeOrder";
 import { Order } from "./Order";
 import { ValidateAuthorizationCollectorRequest } from "./ValidateAuthorization";
 import { IError } from "../interface";
-import { UserCollectorRequest } from "./User";
 
 export abstract class RedPayAuthorizationManager {
   private intervalId?: NodeJS.Timeout;
@@ -147,7 +146,7 @@ export abstract class RedPayAuthorizationManager {
       response = await this.redPayService.validateAuthorization(
         new ValidateAuthorizationCollectorRequest({
           authorization_uuid: authorizeOrder.authorization_uuid,
-          user: new UserCollectorRequest({ user_id: authorizeOrder.user_id }),
+          user_id: authorizeOrder.user_id,
         })
       );
     } catch (err) {
