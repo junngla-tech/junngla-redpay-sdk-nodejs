@@ -23,12 +23,24 @@ export abstract class RedPayAuthorizationManager {
   }
 
   /**
-   * Procesa un webhook de pre-autorización siguiendo un flujo predefinido: validación de firma, obtención de orden,
-   * validación de código de estado, verificación de revocación, validación de reutilización y evento de pre-autorización.
-   *
-   * @param {WebhookPreAuthorization} webhook - El payload del webhook que se procesa.
-   * @returns {Promise<void>} Una promesa que se resuelve cuando el procesamiento del webhook finaliza.
-   */
+ * Procesa un webhook de pre-autorización siguiendo un flujo predefinido.
+ * 
+ * Este método realiza las siguientes acciones:
+ * 1. **Validación de Firma**: Verifica que la firma incluida en el webhook sea válida.
+ * 2. **Obtención de la Orden**: Recupera la orden asociada al `token_uuid` proporcionado en el webhook.
+ * 3. **Validación del Código de Estado**:
+ *    - Determina si el código de estado del webhook indica un evento válido o informativo.
+ * 4. **Verificación de Revocación**: Comprueba si la orden ha sido revocada previamente.
+ * 5. **Validación de Reutilización**: Garantiza que la orden pueda ser reutilizada según el límite establecido.
+ * 6. **Ejecución de Eventos**:
+ *    - Si el código de estado es válido, ejecuta el evento de pre-autorización (`onPreAuthorizeEvent`).
+ *    - Si no, ejecuta el evento informativo (`onInfoEvent`).
+ * 
+ * @param {WebhookPreAuthorization} webhook - El payload del webhook que contiene los datos del evento.
+ * @returns {Promise<void>} Una promesa que se resuelve cuando el procesamiento del webhook finaliza.
+ * 
+ * @throws {Error} Si alguna de las validaciones falla o se detecta una inconsistencia en el flujo.
+ */
   public async processWebhook(webhook: WebhookPreAuthorization): Promise<void> {
     this.validateSignature(webhook);
 
@@ -83,6 +95,17 @@ export abstract class RedPayAuthorizationManager {
 
   /**
    * Inicia el procesamiento periódico de órdenes.
+   *
+   * Este método realiza las siguientes acciones:
+   * - Verifica si ya hay un intervalo activo y, de ser así, no inicia otro.
+   * - Configura un intervalo que se ejecuta cada 1000 ms.
+   * - En cada iteración:
+   *   1. Verifica si ya hay un procesamiento en curso para evitar concurrencia.
+   *   2. Recupera las órdenes pendientes mediante `pendingAuthorizeOrders`.
+   *   3. Si no hay órdenes pendientes, detiene el procesamiento llamando a `stop`.
+   *   4. Procesa todas las órdenes pendientes llamando a `processAuthorizeOrders`.
+   * - Maneja errores lanzados durante el procesamiento y clasifica errores de implementación (`ImplementationError`) y otros errores (`ProcessAuthorizeError`).
+   * - Marca el estado de procesamiento (`isProcessing`) como `false` al finalizar cada iteración.
    */
   public start(): void {
     if (this.intervalId) return;
@@ -115,6 +138,11 @@ export abstract class RedPayAuthorizationManager {
 
   /**
    * Detiene el procesamiento periódico de órdenes.
+   *
+   * Este método:
+   * - Limpia el intervalo activo mediante `clearInterval`.
+   * - Elimina el identificador del intervalo (`intervalId`).
+   * - Restablece el estado de procesamiento (`isProcessing`) a `false`.
    */
   public stop(): void {
     if (!this.intervalId) return;
@@ -126,6 +154,9 @@ export abstract class RedPayAuthorizationManager {
 
   /**
    * Procesa múltiples autorizaciones de órdenes.
+   *
+   * @param {AuthorizeOrder[]} authorizeOrders - Lista de órdenes a autorizar.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando todas las autorizaciones se procesan.
    */
   private async processAuthorizeOrders(
     authorizeOrders: AuthorizeOrder[]
@@ -137,6 +168,14 @@ export abstract class RedPayAuthorizationManager {
 
   /**
    * Procesa una sola autorización de orden.
+   *
+   * Este método:
+   * - Envía una solicitud para validar la autorización mediante `redPayService.validateAuthorization`.
+   * - En caso de éxito, ejecuta `onSuccess`.
+   * - En caso de error, maneja el error con `handleAuthorizationError`.
+   *
+   * @param {AuthorizeOrder} authorizeOrder - Orden de autorización a procesar.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando la autorización es procesada.
    */
   private async processSingleAuthorization(
     authorizeOrder: AuthorizeOrder
@@ -163,7 +202,15 @@ export abstract class RedPayAuthorizationManager {
   }
 
   /**
-   * Maneja errores de autorización.
+   * Maneja errores de autorización de órdenes.
+   *
+   * Este método:
+   * - Si el error tiene un `status_code` de reintento, espera 2 segundos y vuelve a intentar procesar la orden.
+   * - Si el error no permite reintento, llama a `onError` para manejar el fallo.
+   *
+   * @param {AuthorizeOrder} authorizeOrder - Orden que causó el error.
+   * @param {IError} error - Error que ocurrió durante el procesamiento.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando el error es manejado.
    */
   private async handleAuthorizationError(
     authorizeOrder: AuthorizeOrder,
