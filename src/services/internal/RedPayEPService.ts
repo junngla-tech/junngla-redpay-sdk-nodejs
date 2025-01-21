@@ -13,7 +13,7 @@ export class RedPayEPService extends RedPayBase implements RoleActionsEP {
   /**
    * Autoriza un token.
    * @param authorizeInstance - Instancia de `Authorize` que contiene los datos necesarios para autorizar un token.
-   * @returns Una promesa que resuelve en una respuesta de tipo `IAuthorizeResponse`.
+   * @returns Una promesa que resuelve en una respuesta de tipo `AuthorizeResponse`.
    */
   public async authorizeToken(
     authorizeInstance: AuthorizeRequest

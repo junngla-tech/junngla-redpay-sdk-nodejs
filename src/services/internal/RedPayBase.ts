@@ -66,7 +66,6 @@ export abstract class RedPayBase implements IRoleActions {
 
   /**
    * Actualiza un usuario utilizando un payload transformado.
-   * @param userClass - Clase del usuario para la transformación (por ejemplo, `UserPayer`).
    * @param userInstance - Instancia del usuario a actualizar.
    * @returns Una promesa con la respuesta del usuario actualizado.
    */
@@ -85,7 +84,6 @@ export abstract class RedPayBase implements IRoleActions {
 
   /**
    * Actualiza parcialmente un usuario utilizando un payload transformado.
-   * @param userClass - Clase del usuario para la transformación (por ejemplo, `UserPayer` o `UserCollector`).
    * @param userInstance - Objeto que debe ser una instancia o JSON del usuario.
    * @returns Una promesa con la respuesta del usuario actualizado.
    */
@@ -126,7 +124,7 @@ export abstract class RedPayBase implements IRoleActions {
 
   /**
    * Verifica un usuario.
-   * @param payload - Objeto que debe ser una instancia de `UserPayer` o `UserCollector`.
+   * @param userInstance - Instancia de usuario a verificar.
    * @returns Una promesa con la respuesta del usuario verificado.
    */
   public async getUser<T extends UserPayerRequest | UserCollectorRequest>(
@@ -149,7 +147,7 @@ export abstract class RedPayBase implements IRoleActions {
 
   /**
    * Verifica un usuario o falla.
-   * @param payload - Objeto que debe ser una instancia de `UserPayer` o `UserCollector`.
+   * @param userInstance - Instancia de usuario a verificar.
    * @returns Una promesa con la respuesta del usuario verificado.
    * @throws Error - Si la solicitud falla.
    */

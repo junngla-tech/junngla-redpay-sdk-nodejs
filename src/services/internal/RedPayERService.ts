@@ -24,7 +24,7 @@ export class RedPayERService extends RedPayBase implements RoleActionsER {
   /**
    * Genera un token utilizando un payload transformado.
    * @param tokenInstance - Instancia del token a generar.
-   * @returns Una promesa que resuelve en una respuesta de tipo `ITokenResponse`.
+   * @returns Una promesa que resuelve en una respuesta de tipo `GenerateTokenResponse`.
    */
   public async generateToken<T extends TokenBase>(
     tokenInstance: T
@@ -42,7 +42,7 @@ export class RedPayERService extends RedPayBase implements RoleActionsER {
   /**
    * Revoca un token.
    * @param revokeInstance - Instancia de `RevokeToken` que contiene los datos necesarios para revocar un token.
-   * @returns Una promesa que resuelve en una respuesta de tipo `IRevokeResponse`.
+   * @returns Una promesa que resuelve en una respuesta de tipo `RevokeTokenResponse`.
    */
   public async revokeToken(
     revokeInstance: RevokeTokenRequest
@@ -59,7 +59,7 @@ export class RedPayERService extends RedPayBase implements RoleActionsER {
   /**
    * Realiza una devolución (chargeback) de una transacción.
    * @param chargebackInstance - Instancia de `Chargeback` que contiene los datos necesarios para realizar el chargeback.
-   * @returns Una promesa que resuelve en una respuesta de tipo `IChargebackResponse`.
+   * @returns Una promesa que resuelve en una respuesta de tipo `ChargebackResponse`.
    */
   public async generateChargeback(
     chargebackInstance: ChargebackRequest
