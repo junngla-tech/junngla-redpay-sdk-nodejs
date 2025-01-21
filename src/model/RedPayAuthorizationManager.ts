@@ -1,9 +1,10 @@
+import { STATUS_CODE_OK, STATUS_CODE_RETRY } from "../config/constants";
 import {
-  RETRY_LIMIT,
-  STATUS_CODE_OK,
-  STATUS_CODE_RETRY,
-} from "../config/constants";
-import { ImplementationError, OrderIsRevokedError, OrderReuseLimitError, ProcessAuthorizeError } from "../errors";
+  ImplementationError,
+  OrderIsRevokedError,
+  OrderReuseLimitError,
+  ProcessAuthorizeError,
+} from "../errors";
 import { RedPayConfigProvider } from "../provider";
 import { RedPayIntegrity, RedPayService } from "../services";
 import { WebhookPreAuthorization } from "../types";
@@ -17,7 +18,6 @@ export abstract class RedPayAuthorizationManager {
   private intervalId?: NodeJS.Timeout;
   private isProcessing = false;
   protected readonly redPayService: RedPayService;
-  private retry = 1;
 
   constructor(redPayService?: RedPayService) {
     this.redPayService = redPayService || new RedPayService();
@@ -86,25 +86,33 @@ export abstract class RedPayAuthorizationManager {
    * Inicia el procesamiento periódico de órdenes.
    */
   public start(): void {
-    if (this.intervalId) return; 
+    if (this.intervalId) return;
 
     this.intervalId = setInterval(async () => {
-        if (this.isProcessing) return;
-        this.isProcessing = true; 
+      if (this.isProcessing) return;
+      this.isProcessing = true;
 
-        try {
-            const orders = await this.pendingAuthorizeOrders(); 
+      try {
+        const orders = await this.pendingAuthorizeOrders();
 
-            if (orders.length === 0) return this.stop();
+        if (orders.length === 0) return this.stop();
 
-            await this.processAuthorizeOrders(orders); 
-        } catch (error) {
-          throw new ProcessAuthorizeError()
-        } finally {
-            this.isProcessing = false;
+        await this.processAuthorizeOrders(orders);
+      } catch (error) {
+        if (error instanceof ImplementationError) {
+          throw new ImplementationError(error);
         }
+
+        const err = error as IError;
+        throw new ProcessAuthorizeError(
+          err.data?.operation_uuid,
+          err.data?.status_code
+        );
+      } finally {
+        this.isProcessing = false;
+      }
     }, 1000);
-}
+  }
 
   /**
    * Detiene el procesamiento periódico de órdenes.
@@ -113,14 +121,16 @@ export abstract class RedPayAuthorizationManager {
     if (!this.intervalId) return;
 
     clearInterval(this.intervalId);
-    delete this.intervalId; 
+    delete this.intervalId;
     this.isProcessing = false;
   }
 
   /**
    * Procesa múltiples autorizaciones de órdenes.
    */
-  private async processAuthorizeOrders(authorizeOrders: AuthorizeOrder[]): Promise<void> {
+  private async processAuthorizeOrders(
+    authorizeOrders: AuthorizeOrder[]
+  ): Promise<void> {
     for (const order of authorizeOrders) {
       await this.processSingleAuthorization(order);
     }
@@ -129,18 +139,17 @@ export abstract class RedPayAuthorizationManager {
   /**
    * Procesa una sola autorización de orden.
    */
-  private async processSingleAuthorization(authorizeOrder: AuthorizeOrder): Promise<void> {
-
+  private async processSingleAuthorization(
+    authorizeOrder: AuthorizeOrder
+  ): Promise<void> {
     let response;
     try {
-      
       response = await this.redPayService.validateAuthorization(
         new ValidateAuthorizationCollectorRequest({
           authorization_uuid: authorizeOrder.authorization_uuid,
           user: new UserCollectorRequest({ user_id: authorizeOrder.user_id }),
         })
       );
-
     } catch (err) {
       await this.handleAuthorizationError(authorizeOrder, err as IError);
     }
@@ -150,35 +159,23 @@ export abstract class RedPayAuthorizationManager {
     try {
       await this.onSuccess(authorizeOrder, response.status_code!);
     } catch (err) {
-      throw new ImplementationError();
+      throw new ImplementationError(err as Error);
     }
   }
 
   /**
    * Maneja errores de autorización.
    */
-  private async handleAuthorizationError(authorizeOrder: AuthorizeOrder, error: IError): Promise<void> {
+  private async handleAuthorizationError(
+    authorizeOrder: AuthorizeOrder,
+    error: IError
+  ): Promise<void> {
     if (error.data?.status_code === STATUS_CODE_RETRY) {
-      await this.retryAuthorization(authorizeOrder);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await this.processSingleAuthorization(authorizeOrder);
     } else {
-      // TODO: Verificar que estado de error se debe enviar `uknown`.
-      await this.onError(authorizeOrder, error.data?.status_code || "unknown");
+      await this.onError(authorizeOrder, error.data!.status_code!);
     }
-  }
-
-  /**
-   * Reintenta procesar una autorización con límite de intentos.
-   */
-  private async retryAuthorization(authorizeOrder: AuthorizeOrder): Promise<void> {
-    this.retry++;
-
-    if (this.retry > RETRY_LIMIT) {
-      this.retry = 1
-      return await this.onError(authorizeOrder, STATUS_CODE_RETRY);
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    await this.processSingleAuthorization(authorizeOrder);
   }
 
   /**
@@ -215,7 +212,7 @@ export abstract class RedPayAuthorizationManager {
    * @param {string} token_uuid - El identificador único del token.
    * @returns {Promise<Order>} Una promesa que se resuelve con la orden obtenida.
    */
-  abstract getOrder(token_uuid: string ): Promise<Order>;
+  abstract getOrder(token_uuid: string): Promise<Order>;
 
   /**
    * Método abstracto para obtener órdenes pendientes de autorización.
