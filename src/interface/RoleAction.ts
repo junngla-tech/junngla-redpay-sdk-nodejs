@@ -40,7 +40,6 @@ export interface IRoleActions {
 
   /**
    * Actualiza un usuario existente de forma parcial.
-   * @param userClass Clase del usuario a actualizar (UserPayer o UserCollector).
    * @param userInstance Instancia del usuario a actualizar parcialmente.
    * @returns Una promesa con la respuesta del usuario actualizado parcialmente.
    */

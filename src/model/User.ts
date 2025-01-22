@@ -17,6 +17,11 @@ import { SbifCode, AccountId } from "../types";
 import { ScheduleMode, UserType, WithdrawalMode } from "../enum";
 import { ClassBase } from "./ClassBase";
 
+/**
+ * Transforma la configuración de retiro de fondos según las reglas predefinidas.
+ * @param {TransformFnParams} value - Valor transformado.
+ * @returns {Withdrawal | undefined} Configuración de retiro transformada.
+ */
 const transformWithdrawal = ({
   value,
   obj,
@@ -297,47 +302,115 @@ export class UserPayerRequest extends UserBase {
   }
 }
 
+/**
+ * Representa la respuesta del sistema para un usuario.
+ */
 export class UserReponse extends ClassBase<UserReponse> {
+  /**
+   * Identificador único del usuario.
+   * Esta propiedad se expone solo al transformar a clase y se excluye al convertir a objeto plano.
+   * @type {string}
+   * @readonly
+   */
   @Expose()
   @Exclude({ toPlainOnly: true })
   @Transform(({ obj }) => obj.enroller_user_id)
   readonly user_id!: string;
 
+  /**
+   * Identificador interno del enrolador del usuario.
+   * Esta propiedad no se expone en las transformaciones.
+   * @type {string}
+   * @private
+   */
   @Exclude()
   private readonly enroller_user_id!: string;
 
+  /**
+   * Nombre del usuario o razón social.
+   * @type {string}
+   * @readonly
+   */
   @Expose()
   readonly name!: string;
 
+  /**
+   * Correo electrónico del usuario.
+   * @type {string}
+   * @readonly
+   */
   @Expose()
   readonly email!: string;
 
+  /**
+   * Tipo de usuario (por ejemplo, `collector` o `payer`).
+   * @type {UserType}
+   * @readonly
+   */
   @Expose()
   readonly user_type!: UserType;
 
+  /**
+   * Identificación tributaria del usuario (RUT).
+   * @type {string}
+   * @readonly
+   */
   @Expose()
   readonly tax_id!: string;
 
+  /**
+   * Dirección tributaria del usuario (opcional).
+   * @type {string | undefined}
+   * @readonly
+   */
   @Expose()
   readonly tax_address?: string;
 
+  /**
+   * Nombre de fantasía o glosa asociada al usuario (opcional).
+   * @type {string | undefined}
+   * @readonly
+   */
   @Expose()
   readonly gloss?: string;
 
+  /**
+   * Información geográfica del usuario.
+   * @type {Geo | undefined}
+   * @readonly
+   */
   @Expose()
   readonly geo?: Geo;
 
+  /**
+   * Información de la cuenta bancaria asociada al usuario.
+   * @type {UserAccount}
+   * @readonly
+   */
   @Expose()
   readonly account!: UserAccount;
 
+  /**
+   * Indica si el comercio requiere activación en el Portal de Cartolas.
+   * @type {boolean | undefined}
+   * @readonly
+   */
   @Expose()
   readonly required_activation?: boolean;
 
+  /**
+   * Configuración interna de liquidación del comercio.
+   * Esta propiedad no se expone en las transformaciones.
+   * @type {string}
+   * @private
+   */
   @Exclude()
   private readonly settlement!: string;
 
   /**
-   * Configuración de retiro de fondos del recaudador. Solo visible en instancias.
+   * Configuración de retiro de fondos del recaudador.
+   * Solo visible al transformar a clase y excluida en objetos planos.
+   * @type {Withdrawal | undefined}
    */
   @Expose()
   @Exclude({ toPlainOnly: true })
@@ -345,20 +418,37 @@ export class UserReponse extends ClassBase<UserReponse> {
   @Transform(transformWithdrawal, { toClassOnly: true })
   withdrawal?: Withdrawal;
 
+  /**
+   * Constructor de la clase `UserReponse`.
+   * Permite inicializar la instancia con datos parciales.
+   * @param {Partial<UserReponse>} [data] - Datos opcionales para inicializar la instancia.
+   */
   constructor(data?: Partial<UserReponse>) {
     super(data);
   }
 }
 
+/**
+ * Respuesta del sistema para un usuario generado.
+ */
 export class GenerateUserResponse extends ClassBase<GenerateUserResponse> {
+  /**
+   * Usuario generado.
+   */
   @Expose()
   @Transform(({ obj }) => plainToInstance(UserReponse, obj.user))
   @Type(() => UserReponse)
   user!: UserReponse;
 
+  /**
+   * UUID de la operación asociada.
+   */
   @Expose()
   operation_uuid!: string;
 
+  /**
+   * Firma de integridad de la operación.
+   */
   @Expose()
   signature!: string;
 }
