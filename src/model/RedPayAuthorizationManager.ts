@@ -12,6 +12,7 @@ import { AuthorizeOrder } from "./AuthorizeOrder";
 import { Order } from "./Order";
 import { ValidateAuthorizationCollectorRequest } from "./ValidateAuthorization";
 import { IError } from "../interface";
+import { UserType } from "../enum";
 
 export abstract class RedPayAuthorizationManager {
   private intervalId?: NodeJS.Timeout;
@@ -41,7 +42,7 @@ export abstract class RedPayAuthorizationManager {
  * 
  * @throws {Error} Si alguna de las validaciones falla o se detecta una inconsistencia en el flujo.
  */
-  public async processWebhook(webhook: WebhookPreAuthorization): Promise<void> {
+  public async processWebhookPreAuthorize(webhook: WebhookPreAuthorization): Promise<void> {
     this.validateSignature(webhook);
 
     const { token_uuid } = webhook;
@@ -186,6 +187,7 @@ export abstract class RedPayAuthorizationManager {
         new ValidateAuthorizationCollectorRequest({
           authorization_uuid: authorizeOrder.authorization_uuid,
           user_id: authorizeOrder.user_id,
+          user_type: UserType.COLLECTOR,
         })
       );
     } catch (err) {
