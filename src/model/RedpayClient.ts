@@ -10,7 +10,7 @@ import { RedPayConfigProvider } from "../provider";
 import { RedPayEnvironment } from "../enum";
 import { RedPayIntegrity } from "../services/RedPayIntegrity";
 import { IError, IRedPayConfig, RedPayError } from "../interface";
-import { InvalidSignatureError } from "../errors";
+import { InvalidSignatureError, UserNotFoundError } from "../errors";
 
 /**
  * Cliente RedPay para realizar solicitudes HTTP firmadas y validar integridad.
@@ -140,11 +140,7 @@ export class RedPayClient {
    * @returns Una promesa con la respuesta deserializada o un objeto vacío en caso de error.
    */
   public async get<T>(path: string, params?: object): Promise<T> {
-    try {
-      return await this.request<T>("get", path, params);
-    } catch (error) {
-      return {} as T; // Devuelve un objeto vacío en caso de error
-    }
+    return await this.request<T>("get", path, params);
   }
 
   /**
@@ -154,7 +150,11 @@ export class RedPayClient {
    * @returns Una promesa con la respuesta deserializada.
    */
   public async getOrFail<T>(path: string, params?: object): Promise<T> {
-    return this.request<T>("get", path, params);
+    const response = await this.request<T>("get", path, params);
+
+    if (!response) { throw new UserNotFoundError(); }
+
+    return response;
   }
 
   /**
