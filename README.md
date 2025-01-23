@@ -2,36 +2,48 @@
 
 RedPay SDK NodeJS es una biblioteca diseñada para facilitar la integración con los servicios de RedPay en aplicaciones basadas en Node.js. Proporciona herramientas completas para la gestión de usuarios, generación y validación de tokens, y control de integridad en todas las interacciones con los servicios de RedPay.
 
+# Estado del SDK: Versión BETA
+
+El SDK se encuentra actualmente en su versión BETA. Estamos trabajando continuamente para mejorar su funcionalidad y confiabilidad. Valoramos enormemente tus comentarios y sugerencias, ya que son esenciales para optimizar esta herramienta.
+
+Si encuentras algún problema o deseas compartir tus ideas, no dudes en contactarnos a través del correo electrónico: soporteqri@junngla.com. Estamos aquí para ayudarte.
+
+Agradecemos tu confianza y colaboración durante esta etapa de desarrollo.
+
 # Tabla de Contenidos
 
 1. [Instalación](#instalación)
-2. [RedPayClient: Gestión de Peticiones HTTP](#redpayclient-gestión-de-peticiones-http)
-3. [Enrolador Recaudador](#enrolador-recaudador)
+2. [RedPayClient: Gestión de peticiones HTTP](#redpayclient-gestión-de-peticiones-http)
+3. [Enrolador recaudador](#enrolador-recaudador)
    - [Configuración inicial](#configuración-inicial)
    - [RedPayService](#redpayservice)
      - [Métodos generales](#métodos-generales)
      - [Métodos específicos](#métodos-específicos)
-     - [Gestión de Tokens](#gestión-de-tokens)
+     - [Gestión de tokens](#gestión-de-tokens)
      - [Validación de token (opcional)](#validación-de-token-opcional)
      - [Validación de autorización](#validación-de-autorización)
      - [Detalles de la devolución](#detalles-de-la-devolución)
      - [Gestión de autorizaciones](#gestión-de-autorizaciones)
-       - [Métodos Principales](#métodos-principales)
-       - [Métodos Abstractos](#métodos-abstractos)
-4. [Enrolador Pagador (billetera digital)](#enrolador-pagador-billetera-digital)
+       - [Métodos principales](#métodos-principales)
+       - [Métodos abstractos](#métodos-abstractos)
+4. [Enrolador pagador (billetera digital)](#enrolador-pagador-billetera-digital)
    - [Configuración inicial](#configuración-inicial-1)
    - [RedPayService (Enrolador Pagador)](#redpayservice-enrolador-pagador)
      - [Métodos generales](#métodos-generales-1)
      - [Métodos específicos](#métodos-específicos-1)
-     - [Ejemplo de Implementación](#ejemplo-de-implementación)
+     - [Ejemplo de implementación](#ejemplo-de-implementación)
      - [Validación de token](#validación-de-token)
      - [Autorización de transacciones](#autorización-de-transacciones)
      - [Validación de autorización (opcional)](#validación-de-autorización-opcional)
-5. [Enrolador Dual (Recaudador y Pagador)](#enrolador-dual-recaudador-y-pagador)
-   - [Requisitos para Implementar un Enrolador Dual](#requisitos-para-implementar-un-enrolador-dual)
+5. [Enrolador dual (Recaudador y Pagador)](#enrolador-dual-recaudador-y-pagador)
+   - [Requisitos para implementar un enrolador dual](#requisitos-para-implementar-un-enrolador-dual)
 6. [Control de integridad](#control-de-integridad)
    - [IntegrityService](#integrityservice)
-     - [Métodos Disponibles](#métodos-disponibles)
+     - [Métodos disponibles](#métodos-disponibles)
+7. [Colaboración](#colaboración)
+   - [Reporte de problemas de seguridad](#reporte-de-problemas-de-seguridad)
+8. [Documentación](#documentación)
+9. [API](#api)
 
 # Instalación
 
@@ -43,7 +55,7 @@ npm install redpay-sdk-nodejs
 yarn add redpay-sdk-nodejs
 ```
 
-# RedPayClient: Gestión de Peticiones HTTP
+# RedPayClient: Gestión de peticiones HTTP
 
 El cliente de RedPay es una clase que permite realizar peticiones HTTP a los servicios de RedPay.
 
@@ -52,13 +64,13 @@ El cliente de RedPay es una clase que permite realizar peticiones HTTP a los ser
 - Firma Automática: Las peticiones son firmadas automáticamente con el secreto de integridad.
 - Validación de Respuestas: Se verifica la firma en las respuestas para evitar manipulaciones.
 
-# Enrolador Recaudador
+# Enrolador recaudador
 
 ## Configuración inicial
 
 La configuración inicial de la librería es global y debe realizarse una única vez. Define los certificados, secretos y parámetros del entorno (producción o integración) necesarios para operar como recolector.
 
-**Ejemplo de Configuración:**
+**Ejemplo de configuración:**
 
 ```typescript
 import {
@@ -86,9 +98,9 @@ const secrets = new Secrets({
 const accounts = new Accounts({
   // Cuenta de devolución (opcional)
   chargeback: new Account({
-    account_id: "demo",
+    id: "demo",
     number: 22222222,
-    sbif_code: Bank.BANCO_BICE,
+    bank: Bank.BANCO_BICE,
     type: AccountAuthorization.CORRIENTE,
   }),
 });
@@ -120,7 +132,7 @@ Este servicio ofrece las siguientes funcionalidades para las integraciones de ti
 - `generateChargeback`: Realizar un contra cargo (devolución).
 - `validateAuthorization`: Validar estado final de una transacción.
 
-**Ejemplo de Implementación: Generación de usuario (comercio)**
+**Ejemplo de implementación: Generación de usuario (comercio)**
 
 ```typescript
 import {
@@ -135,7 +147,7 @@ import {
 
 const userAccount = new UserAccount({
   number: 22222222,
-  sbif_code: Bank.BANCO_BICE,
+  bank: Bank.BANCO_BICE,
   tax_id: "76222222-1",
   type: AccountUser.CUENTA_CORRIENTE,
 });
@@ -181,11 +193,11 @@ El objeto `Withdrawal` se utiliza para definir el modo de retiro de fondos de un
 
 Para el modo `MANUAL`, se debe definir el campo `settlement` con la frecuencia de retiro deseada.
 
-### Gestión de Tokens
+### Gestión de tokens
 
 Los tokens son componentes esenciales para las operaciones en RedPay. La librería permite manejar diversos tipos de tokens (T0, T1, T2, T3, T4), cada uno con características específicas.
 
-#### Tipos de Tokens
+#### Tipos de tokens
 
 - T0: Token de transacción.
 - T1: Token de suscripción.
@@ -193,7 +205,7 @@ Los tokens son componentes esenciales para las operaciones en RedPay. La librer�
 - T3: Token de envío de dinero.
 - T4: Token de transacción con un alias.
 
-**Ejemplo de Implementación: Generación de token**
+**Ejemplo de implementación: Generación de token**
 
 ```typescript
 import {
@@ -221,7 +233,7 @@ try {
 }
 ```
 
-**Ejemplo de Implementación: Revocación de token**
+**Ejemplo de implementación: Revocación de token**
 
 ```typescript
 import { RedPayService, RevokeTokenRequest } from "redpay-sdk-nodejs";
@@ -240,7 +252,7 @@ try {
 }
 ```
 
-**Ejemplo de Implementación: Validación de token**
+**Ejemplo de implementación: Validación de token**
 
 ```typescript
 import {
@@ -268,7 +280,7 @@ try {
 
 El método `validateAuthorization` permite validar el estado final de una autorización de transacción. Dependiendo de la propiedad `status_code` obtenida en la respuesta, se puede determinar si la transacción fue exitosa, fallida o se encuentra en proceso.
 
-**Ejemplo de Implementación: Validación de autorización**
+**Ejemplo de implementación: Validación de autorización**
 
 ```typescript
 import {
@@ -300,7 +312,7 @@ Para realizar una devolución, se debe definir previamente la cuenta `chargeback
 
 Adicionalmente, si desea operar con el modelo devolución automática, se debe definir el `secrets.chargeback_automatic` y la cuenta `account.chargeback_automatic` en la configuración inicial de la librería.
 
-**Ejemplo de Implementación: Devolución (opcional)**
+**Ejemplo de implementación: Devolución (opcional)**
 
 ```typescript
 import { RedPayService, ChargebackRequest } from "redpay-sdk-nodejs";
@@ -331,9 +343,9 @@ La clase abstracta `RedPayAuthorizationManagement` permite procesar webhooks de 
 
 La clase está diseñada para ser extendida por los desarrolladores, quienes deben implementar ciertos métodos abstractos para manejar las órdenes y los eventos específicos de su caso de uso.
 
-#### Métodos Principales
+#### Métodos principales
 
-1. `processWebhook`: Procesa el webhook ejecutando una secuencia que incluye:
+1. `processWebhookPreAuthorize`: Procesa el webhook ejecutando una secuencia que incluye:
 
    - Validación de la firma (`validateSignature`).
    - Obtención de la orden (`getOrder`).
@@ -352,7 +364,7 @@ La clase está diseñada para ser extendida por los desarrolladores, quienes deb
 
 3. `stop`: Detiene el proceso de validación de autorización.
 
-#### Métodos Abstractos
+#### Métodos abstractos
 
 Estos métodos deben ser implementados por las subclases:
 
@@ -369,7 +381,7 @@ Estos métodos deben ser implementados por las subclases:
 - `onSuccess`: Maneja eventos de autorización exitosa.
 - `onError`: Maneja eventos de autorización fallida.
 
-**Ejemplo de Implementación: Gestión de autorización**
+**Ejemplo de implementación: Gestión de autorización**
 
 ```typescript
 import { Order, WebhookPreAuthorization, RedPayAuthorizationManager, AuthorizeOrder } from "redpay-sdk-nodejs";
@@ -430,13 +442,13 @@ export class RedPayManagemer extends RedPayAuthorizationManager {
 }
 ```
 
-# Enrolador Pagador (Billetera Digital)
+# Enrolador pagador (Billetera Digital)
 
 ## Configuración inicial
 
 a configuración inicial de la librería es global y debe realizarse una única vez. Define los certificados, secretos y parámetros del entorno (producción o integración) necesarios para operar como pagador (billetera digital).
 
-**Ejemplo de Implementación: Configuración inicial**
+**Ejemplo de implementación: Configuración inicial**
 
 ```typescript
 import {
@@ -464,9 +476,9 @@ const secrets = new Secrets({
 const accounts = new Accounts({
   // Cuenta de autorización
   authorize: new Account({
-    account_id: "demo_ep",
+    id: "demo_ep",
     number: 22222222,
-    sbif_code: Bank.BANCO_BICE,
+    bank: Bank.BANCO_BICE,
     type: AccountAuthorization.CORRIENTE,
   }),
 });
@@ -496,9 +508,9 @@ Este servicio ofrece las siguientes funcionalidades para las integraciones de ti
 - `authorizeToken`: Autorizar una transacción.
 - `validateAuthorization`: Validar autorización de una trasacción.
 
-### Ejemplo de Implementación
+### Ejemplo de implementación
 
-**Ejemplo de Implementación: Generación de usuario (pagador)**
+**Ejemplo de implementación: Generación de usuario (pagador)**
 
 ```typescript
 import {
@@ -511,9 +523,9 @@ import {
 } from "redpay-sdk-nodejs";
 
 const userAccount = new UserAccount({
-  account_id: "demo_ep",
+  id: "demo_ep",
   number: 22222222,
-  sbif_code: Bank.BANCO_BICE,
+  bank: Bank.BANCO_BICE,
   tax_id: "76222222-1",
   type: AccountUser.CUENTA_CORRIENTE,
 });
@@ -545,7 +557,7 @@ try {
 
 El método `validateToken` permite obtener detalles de un token. Se utiliza para verificar la información de un token antes de realizar una operación de autorización.
 
-**Ejemplo de Implementación: Validación de token**
+**Ejemplo de implementación: Validación de token**
 
 ```typescript
 import {
@@ -573,7 +585,7 @@ try {
 
 El método `authorizeToken` permite autorizar una transacción utilizando un token previamente validado.
 
-**Ejemplo de Implementación: Autorización de transacciones**
+**Ejemplo de implementación: Autorización de transacciones**
 
 ```typescript
 import { RedPayService, AuthorizeRequest } from "redpay-sdk-nodejs";
@@ -601,7 +613,7 @@ El método `validateAuthorization` permite validar el estado final de una autori
 
 Para utilizar este método, debe definir uno o ambos de los siguientes campos: `authorization_uuid` o `validation_uuid`.
 
-**Ejemplo de Implementación: Validación de autorización**
+**Ejemplo de implementación: Validación de autorización**
 
 ```typescript
 import {
@@ -628,7 +640,7 @@ try {
 }
 ```
 
-# Enrolador Dual (Recaudador y Pagador)
+# Enrolador dual (Recaudador y Pagador)
 
 El **Enrolador Dual** combina las funcionalidades del Enrolador Recaudador y el Enrolador Pagador, permitiendo gestionar tanto la recolección como el pago de fondos en una misma integración.
 
@@ -636,13 +648,13 @@ El **Enrolador Dual** combina las funcionalidades del Enrolador Recaudador y el 
 
 Un Enrolador Dual debe implementar las capacidades de ambos roles:
 
-1. **Funcionalidades de Enrolador Recaudador:**
+1. **Funcionalidades de enrolador recaudador:**
 
 - Gestión de usuarios recolectores, incluyendo creación, actualización y verificación.
 - Generación, validación (opcional) y revocación de tokens asociados a la recolección de fondos
 - Manejo de devoluciones mediante el método `generateChargeback` (opcional).
 
-2. **Funcionalidades de Enrolador Pagador:**
+2. **Funcionalidades de enrolador pagador:**
 
 - Gestión de usuarios pagadores, incluyendo creación, actualización y verificación.
 - Validación y autorización de tokens para el pago de transacciones
@@ -656,7 +668,7 @@ Además de las funcionalidades de los servicios de RedPay, la librería proporci
 
 El `IntegrityService` incluye los siguientes métodos principales:
 
-### Métodos Disponibles:
+### Métodos disponibles:
 
 1. `generateSignature(input: object, secret: string): string`: Genera una firma digital única para un objeto utilizando HMAC SHA256.
 
@@ -696,10 +708,26 @@ const signedObject = RedPayIntegrity.getSignedObject(data, secret);
 console.log(signedObject);
 ```
 
-# Estado del SDK: Versión BETA
+# Colaboración
+¡Gracias por tu interés en contribuir al desarrollo de RedPay SDK NodeJS! Valoramos enormemente todas las aportaciones constructivas que puedan ayudarnos a mejorar esta herramienta. Hay muchas formas en las que puedes colaborar, como:
 
-El SDK se encuentra actualmente en su versión BETA. Estamos trabajando continuamente para mejorar su funcionalidad y confiabilidad. Valoramos enormemente tus comentarios y sugerencias, ya que son esenciales para optimizar esta herramienta.
+- **Reportar errores**: 
+Si encuentras un problema o algo no funciona como esperabas, no dudes en reportarlo.
+- **Aportar código**: 
+Ya sea para corregir errores, implementar nuevas funcionalidades o mejorar las existentes.
+- **Mejorar la documentación**: 
+Correcciones, aclaraciones o nuevas secciones siempre son bienvenidas.
+- **Crear pruebas adicionales**: Ayúdanos a mejorar la cobertura y confiabilidad de nuestras pruebas.
+- **Revisar y triage**: Analiza solicitudes de cambios y problemas abiertos para priorizar su atención.
 
-Si encuentras algún problema o deseas compartir tus ideas, no dudes en contactarnos a través del correo electrónico: soporteqri@junngla.com. Estamos aquí para ayudarte.
+## Reporte de problemas de seguridad
+Si descubres una vulnerabilidad de seguridad en RedPay SDK NodeJS, por favor comunícate con `soporteqri@junngla.com` para conocer los pasos a seguir y cómo informarnos de manera responsable.
 
-Agradecemos tu confianza y colaboración durante esta etapa de desarrollo.
+
+# Documentación
+
+Visita nuestra documentación oficial: https://developers.redpay.cl/site/documentation/context
+
+# API
+
+Visita nuestra API oficial: https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2
