@@ -1,7 +1,11 @@
 import { Enroller } from "../enum";
 import { RedPayConfigProvider } from "../provider";
 import { RoleActionsER, RoleActionsEP, IRoleActions } from "../interface";
-import { RedPayDualService, RedPayEPService, RedPayERService } from "./internal";
+import {
+  RedPayDualService,
+  RedPayEPService,
+  RedPayERService,
+} from "./internal";
 
 /**
  * Clase principal para manejar servicios de RedPay según el tipo de enrolador.
@@ -75,12 +79,15 @@ export class RedPayService {
    * @param args Argumentos necesarios para generar el token.
    * @returns Una promesa que resuelve en una respuesta de tipo `GenerateTokenResponse`.
    * @throws Error Si el método no está disponible para este tipo de servicio.
-   * 
+   *
    * @example
    * ```typescript
    * const tokenInstance = new TokenT0Request();
    * const response = redPayService.generateToken(tokenInstance);
    * ````
+   * 
+   * @docs https://developers.redpay.cl/site/documentation/redpay/collector-duties#payment-tokens
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-transaccional/operation/generatePaymentToken
    */
   public generateToken(...args: Parameters<RoleActionsER["generateToken"]>) {
     if (this.isERService(this.serviceInstance)) {
@@ -96,12 +103,15 @@ export class RedPayService {
    * @param args Argumentos necesarios para revocar el token.
    * @returns Una promesa que resuelve en una respuesta de tipo `RevokeTokenResponse`.
    * @throws Error Si el método no está disponible para este tipo de servicio.
-   * 
+   *
    * @example
    * ```typescript
    * const revokeInstance = new RevokeTokenRequest();
    * const response = redPayService.revokeToken(revokeInstance);
    * ```
+   * 
+   * @docs https://developers.redpay.cl/site/documentation/redpay/collector-duties#revoke-tokens
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-transaccional/operation/revokeTransaction
    */
   public revokeToken(...args: Parameters<RoleActionsER["revokeToken"]>) {
     if (this.isERService(this.serviceInstance)) {
@@ -117,12 +127,15 @@ export class RedPayService {
    * @param args Argumentos necesarios para realizar el chargeback.
    * @returns Una promesa que resuelve en una respuesta de tipo `ChargebackResponse`.
    * @throws Error Si el método no está disponible para este tipo de servicio.
-   * 
+   *
    * @example
    * ```typescript
    * const chargebackInstance = new ChargebackRequest();
    * const response = redPayService.generateChargeback(chargebackInstance);
    * ```
+   * 
+   * @docs https://developers.redpay.cl/site/documentation/redpay/collector-duties#refund-transactions
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-transaccional/operation/reverseTransaction
    */
   public generateChargeback(
     ...args: Parameters<RoleActionsER["generateChargeback"]>
@@ -140,12 +153,15 @@ export class RedPayService {
    * @param args Argumentos necesarios para autorizar el token.
    * @returns Una promesa que resuelve en una respuesta de tipo `AuthorizeResponse`.
    * @throws Error Si el método no está disponible para este tipo de servicio.
-   * 
+   *
    * @example
    * ```typescript
    * const authorizeInstance = new AuthorizeRequest();
    * const response = redPayService.authorizeToken(authorizeInstance);
    * ```
+   * 
+   * @docs https://developers.redpay.cl/site/documentation/redpay/payer-duties#transaction-authorization
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-transaccional/operation/authorizateTransaction
    */
   public authorizeToken(...args: Parameters<RoleActionsEP["authorizeToken"]>) {
     if (this.isEPService(this.serviceInstance)) {
@@ -161,12 +177,15 @@ export class RedPayService {
   /**
    * Valida un token.
    * @param args Argumentos necesarios para validar el token.
-   * 
+   *
    * @example
    * ```typescript
    * const validateTokenInstance = new ValidateTokenRequest();
    * const response = redPayService.validateToken(validateTokenInstance);
    * ```
+   *
+   * @docs https://developers.redpay.cl/site/documentation/redpay/payer-duties#scan-qr
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-transaccional/operation/checkPaymentTokenUUID
    */
   public validateToken(...args: Parameters<IRoleActions["validateToken"]>) {
     return this.serviceInstance.validateToken(...args);
@@ -176,18 +195,23 @@ export class RedPayService {
    * Valida una autorización.
    * @param args Argumentos necesarios para validar la autorización.
    * @returns Una promesa que resuelve en una respuesta de tipo `ValidationAuthorizationResponse`.
-   * 
+   *
    * @example - `COLLECTOR`
    * ```typescript
    * const validateAuthorizationInstance = new ValidateAuthorizationCollectorRequest();
    * const response = redPayService.validateAuthorization(validateAuthorizationInstance);
    * ```
-   * 
+   *
    * @example - `PAYER`
    * ```typescript
    * const validateAuthorizationInstance = new ValidateAuthorizationPayerRequest();
    * const response = redPayService.validateAuthorization(validateAuthorizationInstance);
    * ```
+   *
+   * @docs `COLLECTOR` - https://developers.redpay.cl/site/documentation/redpay/collector-duties#transaction-validation-collector
+   * @docs `PAYER` - https://developers.redpay.cl/site/documentation/redpay/payer-duties#transaction-validation-payer
+   *
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-transaccional/operation/checkAuthorization
    */
   public validateAuthorization(
     ...args: Parameters<IRoleActions["validateAuthorization"]>
@@ -199,18 +223,20 @@ export class RedPayService {
    * Crea un usuario.
    * @param args Argumentos necesarios para crear el usuario.
    * @returns Una promesa que resuelve en una respuesta de tipo `GenerateUserResponse`.
-   * 
+   *
    * @example - `COLLECTOR`
    * ```typescript
    * const userInstance = new UserCollectorRequest();
    * const response = redPayService.createUser(userInstance);
    * ```
-   * 
+   *
    * @example - `PAYER`
    * ```typescript
    * const userInstance = new UserPayerRequest();
    * const response = redPayService.createUser(userInstance);
    * ```
+   *
+   * @api  https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-de-usuarios/operation/enrollUser
    */
   public createUser(...args: Parameters<IRoleActions["createUser"]>) {
     return this.serviceInstance.createUser(...args);
@@ -219,18 +245,20 @@ export class RedPayService {
   /**
    * Actualiza un usuario.
    * @param args Argumentos necesarios para actualizar el usuario.
-   * 
+   *
    * @example - `COLLECTOR`
    * ```typescript
    * const userInstance = new UserCollectorRequest();
    * const response = redPayService.updateUser(userInstance);
    * ```
-   * 
+   *
    * @example - `PAYER`
    * ```typescript
    * const userInstance = new UserPayerRequest();
    * const response = redPayService.updateUser(userInstance);
    * ```
+   *
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-de-usuarios/operation/updateUser
    */
   public updateUser(...args: Parameters<IRoleActions["updateUser"]>) {
     return this.serviceInstance.updateUser(...args);
@@ -240,18 +268,20 @@ export class RedPayService {
    * Actualiza parcialmente un usuario.
    * @param args Argumentos necesarios para la actualización parcial.
    * @returns Una promesa que resuelve en una respuesta de tipo `GenerateUserResponse`.
-   * 
+   *
    * @example - `COLLECTOR`
    * ```typescript
    * const userInstance = UserCollectorRequest();
    * const response = redPayService.updateUserPartial(userInstance);
    * ```
-   * 
+   *
    * @example - `PAYER`
    * ```typescript
    * const userInstance = UserPayerRequest();
    * const response = redPayService.updateUserPartial(userInstance);
    * ```
+   *
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-de-usuarios/operation/updateUser
    */
   public updateUserPartial(
     ...args: Parameters<IRoleActions["updateUserPartial"]>
@@ -263,18 +293,20 @@ export class RedPayService {
    * Obtiene un usuario.
    * @param args Argumentos necesarios para obtener el usuario.
    * @returns Una promesa que resuelve en una respuesta de tipo `GenerateUserResponse`.
-   * 
+   *
    * @example - `COLLECTOR`
    * ```typescript
    * const userInstance = new UserCollectorRequest();
    * const response = redPayService.getUser(userInstance);
    * ```
-   * 
+   *
    * @example - `PAYER`
    * ```typescript
    * const userInstance = new UserPayerRequest();
    * const response = redPayService.getUser(userInstance);
    * ```
+   *
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-de-usuarios/paths/~1user~1verify-enrollment?enroller_user_id=enroller_user_id&user_type=user_type&signature=signature/get
    */
   public getUser(...args: Parameters<IRoleActions["getUser"]>) {
     return this.serviceInstance.getUser(...args);
@@ -285,6 +317,20 @@ export class RedPayService {
    * @param args Argumentos necesarios para obtener el usuario.
    * @returns Una promesa que resuelve en una respuesta de tipo `GenerateUserResponse`.
    * @throws Error - Si la solicitud falla.
+   *
+   * @example - `COLLECTOR`
+   * ```typescript
+   * const userInstance = new UserCollectorRequest();
+   * const response = redPayService.getUser(userInstance);
+   * ```
+   *
+   * @example - `PAYER`
+   * ```typescript
+   * const userInstance = new UserPayerRequest();
+   * const response = redPayService.getUser(userInstance);
+   * ```
+   *
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-de-usuarios/paths/~1user~1verify-enrollment?enroller_user_id=enroller_user_id&user_type=user_type&signature=signature/get
    */
   public getUserOrFail(...args: Parameters<IRoleActions["getUserOrFail"]>) {
     return this.serviceInstance.getUserOrFail(...args);

@@ -15,7 +15,10 @@ import {
   GenerateUserResponse,
 } from "../../model/User";
 import { PathUrl } from "../../enum";
-import { ValidateTokenRequest, ValidateTokenResponse } from "../../model/ValidateToken";
+import {
+  ValidateTokenRequest,
+  ValidateTokenResponse,
+} from "../../model/ValidateToken";
 import {
   ValidateAuthorizationCollectorRequest,
   ValidateAuthorizationPayerRequest,
@@ -50,6 +53,8 @@ export abstract class RedPayBase implements IRoleActions {
    * Crea un usuario utilizando una instancia de usuario.
    * @param userInstance - Objeto que debe ser una instancia del usuario.
    * @returns UserResponse - Una promesa con la respuesta del usuario creado.
+   *
+   * @api  https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-de-usuarios/operation/enrollUser
    */
   public async createUser<T extends UserPayerRequest | UserCollectorRequest>(
     userInstance: T
@@ -68,6 +73,8 @@ export abstract class RedPayBase implements IRoleActions {
    * Actualiza un usuario utilizando un payload transformado.
    * @param userInstance - Instancia del usuario a actualizar.
    * @returns Una promesa con la respuesta del usuario actualizado.
+   *
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-de-usuarios/operation/updateUser
    */
   public async updateUser<T extends UserPayerRequest | UserCollectorRequest>(
     userInstance: T
@@ -86,6 +93,8 @@ export abstract class RedPayBase implements IRoleActions {
    * Actualiza parcialmente un usuario utilizando un payload transformado.
    * @param userInstance - Objeto que debe ser una instancia o JSON del usuario.
    * @returns Una promesa con la respuesta del usuario actualizado.
+   *
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-de-usuarios/operation/updateUser
    */
   public async updateUserPartial<
     T extends UserPayerRequest | UserCollectorRequest
@@ -126,6 +135,8 @@ export abstract class RedPayBase implements IRoleActions {
    * Verifica un usuario.
    * @param userInstance - Instancia de usuario a verificar.
    * @returns Una promesa con la respuesta del usuario verificado.
+   *
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-de-usuarios/paths/~1user~1verify-enrollment?enroller_user_id=enroller_user_id&user_type=user_type&signature=signature/get
    */
   public async getUser<T extends UserPayerRequest | UserCollectorRequest>(
     userInstance: T
@@ -150,6 +161,8 @@ export abstract class RedPayBase implements IRoleActions {
    * @param userInstance - Instancia de usuario a verificar.
    * @returns Una promesa con la respuesta del usuario verificado.
    * @throws Error - Si la solicitud falla.
+   *
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-de-usuarios/paths/~1user~1verify-enrollment?enroller_user_id=enroller_user_id&user_type=user_type&signature=signature/get
    */
   public async getUserOrFail<T extends UserPayerRequest | UserCollectorRequest>(
     userInstance: T
@@ -173,6 +186,9 @@ export abstract class RedPayBase implements IRoleActions {
    * Valida un token.
    * @param validateTokenInstance - Clase de validación de token (por ejemplo, `ValidateTokenRequest`).
    * @returns Una promesa con el resultado de la validación.
+   * 
+   * @docs https://developers.redpay.cl/site/documentation/redpay/payer-duties#scan-qr
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-transaccional/operation/checkPaymentTokenUUID
    */
   public async validateToken(
     validateTokenInstance: ValidateTokenRequest
@@ -190,6 +206,11 @@ export abstract class RedPayBase implements IRoleActions {
    * Valida una autorización.
    * @param validateAuthorizationInstance - Instancia de validación de autorización.
    * @returns Una promesa con el resultado de la validación de la autorización.
+   * 
+   * @docs `COLLECTOR` - https://developers.redpay.cl/site/documentation/redpay/collector-duties#transaction-validation-collector
+   * @docs `PAYER` - https://developers.redpay.cl/site/documentation/redpay/payer-duties#transaction-validation-payer
+   * 
+   * @api https://developers.redpay.cl/site/reference-api/redpay/api-qri-v2#tag/Gestion-transaccional/operation/checkAuthorization
    */
   public async validateAuthorization<
     T extends
