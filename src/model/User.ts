@@ -73,11 +73,11 @@ export class UserAccount
   @Expose({ toClassOnly: true })
   @Exclude({ toPlainOnly: true })
   @Transform(({ value, obj }) => obj.owner_id || value, { toClassOnly: true })
-  sbif_code!: SbifCode;
+  bank!: SbifCode;
 
   @Expose({ toPlainOnly: true })
   @Exclude({ toClassOnly: true })
-  @Transform(({ obj }) => obj.sbif_code, { toPlainOnly: true })
+  @Transform(({ obj }) => obj.bank, { toPlainOnly: true })
   private owner_id!: SbifCode;
 
   /**
@@ -305,7 +305,7 @@ export class UserPayerRequest extends UserBase {
 /**
  * Representa la respuesta del sistema para un usuario.
  */
-export class UserReponse extends ClassBase<UserReponse> {
+export class User extends ClassBase<User> {
   /**
    * Identificador único del usuario.
    * Esta propiedad se expone solo al transformar a clase y se excluye al convertir a objeto plano.
@@ -421,9 +421,9 @@ export class UserReponse extends ClassBase<UserReponse> {
   /**
    * Constructor de la clase `UserReponse`.
    * Permite inicializar la instancia con datos parciales.
-   * @param {Partial<UserReponse>} [data] - Datos opcionales para inicializar la instancia.
+   * @param {Partial<User>} [data] - Datos opcionales para inicializar la instancia.
    */
-  constructor(data?: Partial<UserReponse>) {
+  constructor(data?: Partial<User>) {
     super(data);
   }
 }
@@ -436,9 +436,9 @@ export class GenerateUserResponse extends ClassBase<GenerateUserResponse> {
    * Usuario generado.
    */
   @Expose()
-  @Transform(({ obj }) => plainToInstance(UserReponse, obj.user))
-  @Type(() => UserReponse)
-  user!: UserReponse;
+  @Transform(({ obj }) => plainToInstance(User, obj.user))
+  @Type(() => User)
+  user!: User;
 
   /**
    * UUID de la operación asociada.

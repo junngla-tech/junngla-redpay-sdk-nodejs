@@ -29,8 +29,8 @@ export interface IAccounts {
 }
 
 export interface IAccount {
-  account_id: string;
+  id: string;
   number: number;
-  sbif_code: SbifCode;
+  bank: SbifCode;
   type: AccountType;
 }

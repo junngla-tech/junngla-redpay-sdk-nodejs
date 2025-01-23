@@ -14,19 +14,8 @@ export class Account extends ClassBase<Account> implements IAccount {
    * @type {string}
    * @visibility Se incluye al transformar a clase (`toClassOnly`) y se excluye al convertir a un objeto plano (`toPlainOnly`).
    */
-  @Expose({ toClassOnly: true })
-  @Exclude({ toPlainOnly: true })
-  account_id!: string;
-
-  /**
-   * Identificador interno y privado para la cuenta.
-   * Este se mapea al valor de `account_id` al transformar a un objeto plano.
-   * @type {string}
-   * @private
-   */
-  @Expose({ toPlainOnly: true })
-  @Transform(({ obj }) => obj.account_id)
-  private id!: string;
+  @Expose()
+  id!: string;
 
   /**
    * Número de la cuenta representado como una cadena de texto al transformar a un objeto plano.
@@ -40,8 +29,18 @@ export class Account extends ClassBase<Account> implements IAccount {
    * Código bancario según el estándar de la SBIF (Superintendencia de Bancos e Instituciones Financieras de Chile).
    * @type {SbifCode}
    */
-  @Expose()
-  sbif_code!: SbifCode;
+  @Expose({ toClassOnly: true })
+  @Exclude({ toPlainOnly: true })
+  bank!: SbifCode;
+
+  /**
+   * Código bancario según el estándar de la SBIF (Superintendencia de Bancos e Instituciones Financieras de Chile).
+   * Este se mapea al valor de `bank` al transformar a un objeto plano.
+   * @type {SbifCode}
+   */
+  @Expose({ toPlainOnly: true })
+  @Transform(({ obj }) => obj.bank)
+  private sbif_code!: SbifCode;
 
   /**
    * Tipo de la cuenta (por ejemplo, corriente, de ahorro).

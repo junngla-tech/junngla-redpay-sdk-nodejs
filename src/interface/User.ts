@@ -4,7 +4,7 @@ import { AccountId, SbifCode } from "../types";
 
 export interface IUserAccount {
   number: number;
-  sbif_code: SbifCode;
+  bank: SbifCode;
   type: AccountId;
   tax_id: string;
 }

@@ -246,13 +246,21 @@ export class TokenResponse extends ClassBase<TokenResponse> {
   @Transform(({ obj }) => obj.enroller_user_id)
   readonly user_id!: string;
 
+  
+  @Exclude()
+  private readonly token_uuid!: string;
+
   /**
    * UUID del token generado.
    * @type {string}
    * @readonly
    */
   @Expose()
-  readonly token_uuid!: string;
+  @Transform(({ obj }) => obj.token_uuid)
+  readonly uuid!: string;
+  
+  @Exclude()
+  private readonly token_number!: string;
 
   /**
    * Número del token.
@@ -260,7 +268,11 @@ export class TokenResponse extends ClassBase<TokenResponse> {
    * @readonly
    */
   @Expose()
-  readonly token_number!: string;
+  @Transform(({ obj }) => obj.token_number)
+  readonly number!: string;
+
+  @Exclude()
+  private readonly token_url!: string;
 
   /**
    * URL asociada al token.
@@ -269,7 +281,8 @@ export class TokenResponse extends ClassBase<TokenResponse> {
    * @readonly
    */
   @Expose()
-  readonly token_url!: string;
+  @Transform(({ obj }) => obj.token_url)
+  readonly url!: string;
 
   /**
    * Detalle del token.

@@ -1,4 +1,4 @@
-import { Expose, instanceToPlain } from "class-transformer";
+import { Exclude, Expose, instanceToPlain, Transform } from "class-transformer";
 import { AuthorizationMode } from "../enum";
 import { IAccount, IRedPayConfig } from "../interface";
 import { RedPayConfigProvider } from "../provider/RedPayConfigProvider";
@@ -52,7 +52,7 @@ export class SignedAuthorizationAccount extends ClassBase<SignedAuthorizationAcc
 
     const secret = this.getSecretForMode(config, mode);
     this.signature = RedPayIntegrity.generateSignature(
-      { id: this.id, account: this.account, timestamp: this.timestamp },
+      { id: this.id, account: instanceToPlain(this.account), timestamp: this.timestamp },
       secret
     );
   }
@@ -113,12 +113,12 @@ export class SignedAuthorizationAccount extends ClassBase<SignedAuthorizationAcc
 
     const authorizationAccount = new AuthorizationAccount();
     authorizationAccount.number = accountPlain.number;
-    authorizationAccount.sbif_code = accountPlain.sbif_code;
+    authorizationAccount.bank = accountPlain.sbif_code;
     authorizationAccount.type = accountPlain.type;
 
     return {
       id: accountPlain.id,
-      account: authorizationAccount,
+      account: authorizationAccount
     };
   }
 
@@ -144,10 +144,18 @@ export class AuthorizationAccount extends ClassBase<AuthorizationAccount> {
   number!: string;
 
   /**
+   * Código bancario según el estándar de la SBIF (Superintendencia de Bancos e Instituciones Financieras de Chile).
+   */
+  @Expose({ toClassOnly: true })
+  @Exclude({ toPlainOnly: true })
+  bank!: SbifCode;
+
+  /**
    * Código SBIF asociado al banco de la cuenta.
    */
-  @Expose()
-  sbif_code!: SbifCode;
+  @Expose({ toPlainOnly: true })
+  @Transform(({ obj }) => obj.bank)
+  private sbif_code!: SbifCode;
 
   /**
    * Tipo de cuenta (por ejemplo, Cuenta Corriente o Cuenta Vista).
