@@ -85,7 +85,6 @@ export class FileUtils {
 
     if (exists) {
       await fs.promises.unlink(filePath);
-      console.log(`Archivo eliminado correctamente: ${filePath}`);
     }
   }
 }

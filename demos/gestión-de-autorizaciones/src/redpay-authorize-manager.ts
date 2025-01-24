@@ -42,8 +42,6 @@ export class RedPayAuthorizationManager extends _RedPayAuthorizationManager {
     webhook: WebhookPreAuthorization,
     order: Order
   ): Promise<void> {
-    console.log("Pre-autorización procesada");
-
     const authorizeOrder = new AuthorizeOrder({
       authorization_uuid: webhook.operations.authorization_uuid,
       token_uuid: webhook.token_uuid,
@@ -98,10 +96,6 @@ export class RedPayAuthorizationManager extends _RedPayAuthorizationManager {
     status_code: string
   ): Promise<void> {
     try {
-      console.log(
-        "Validación de autorización exitosa:",
-        JSON.stringify(authorizeOrder)
-      );
       // Marcar la orden como confirmada
       authorizeOrder.is_confirmed = true;
       authorizeOrder.status_code = status_code;
@@ -128,9 +122,7 @@ export class RedPayAuthorizationManager extends _RedPayAuthorizationManager {
       );
 
       await FileUtils.deleteFileIfExists(preAuthFilePath);
-    } catch (error) {
-      console.error("Error en onSuccess:", error);
-    }
+    } catch (error) {/** empty block */}
   }
 
   /**
@@ -147,10 +139,6 @@ export class RedPayAuthorizationManager extends _RedPayAuthorizationManager {
     status_code: string
   ): Promise<void> {
     try {
-      console.log(
-        "Error en la validación de autorización:",
-        JSON.stringify(authorizeOrder)
-      );
       // Marcar la orden como rechazada
       authorizeOrder.is_confirmed = true;
       authorizeOrder.status_code = status_code;
@@ -177,8 +165,6 @@ export class RedPayAuthorizationManager extends _RedPayAuthorizationManager {
       );
 
       await FileUtils.deleteFileIfExists(preAuthFilePath);
-    } catch (error) {
-      console.error("Error en onError:", error);
-    }
+    } catch (error) {/** empty block */}
   }
 }

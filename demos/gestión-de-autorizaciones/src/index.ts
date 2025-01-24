@@ -35,7 +35,6 @@ app.post(
 
       res.status(200).json({ message: "Orden de pago generada correctamente" });
     } catch (error) {
-      console.error("Error al iniciar la orden de pago:", error);
       res.status(500).json({ message: "Error al generar la orden de pago" });
     }
   }
@@ -74,7 +73,6 @@ app.post(
         .status(200)
         .json({ message: "Órdenes de pago generadas correctamente" });
     } catch (error) {
-      console.error("Error al iniciar las órdenes de pago:", error);
       res.status(500).json({ message: "Error al generar las órdenes de pago" });
     }
   }
@@ -88,8 +86,6 @@ app.post(
  * @param {Response} res - Objeto de respuesta HTTP.
  */
 app.post("/webhook/pre-authorize", async (req: Request, res: Response): Promise<void> => {
-
-  console.log("Webhook recibido:", JSON.stringify(req.body, null, 2));
 
   try {
     /**
@@ -112,7 +108,6 @@ app.post("/webhook/pre-authorize", async (req: Request, res: Response): Promise<
 
     res.status(200).json({ message: "Webhook procesado correctamente" });
   } catch (error) {
-    console.error("Error al procesar el webhook:", error);
     redPayAuthorizationManager.stop();
     res.status(500).json({ message: "Error al procesar el webhook" });
   }
@@ -122,5 +117,5 @@ app.post("/webhook/pre-authorize", async (req: Request, res: Response): Promise<
  * Inicia el servidor y escucha en el puerto especificado.
  */
 app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
+  // console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
