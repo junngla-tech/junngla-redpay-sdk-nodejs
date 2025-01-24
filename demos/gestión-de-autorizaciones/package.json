@@ -12,7 +12,7 @@
   "description": "",
   "dependencies": {
     "express": "^4.21.2",
-    "redpay-sdk-nodejs": "file:../junngla-redpay-sdk-nodejs"
+    "redpay-sdk-nodejs": "2.0.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
