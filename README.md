@@ -403,7 +403,7 @@ export class RedPayManagemer extends RedPayAuthorizationManager {
         // <Su lógica para manejar la pre-autorización>
     }
 
-    async onInfoEvent(webhook: WebhookPreAuthorization): Promise<void> {
+    async onInfoEvent(preAuthorizationEvent: PreAuthorizationEvent): Promise<void> {
         console.log("Evento informativo recibido");
         // <Su lógica para manejar el evento informativo>
     }
