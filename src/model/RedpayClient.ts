@@ -3,7 +3,11 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
-import { API_URL_INTEGRATION, API_URL_PRODUCTION } from "../config/constants";
+import {
+  API_URL_INTEGRATION,
+  API_URL_PRODUCTION,
+  STATUS_CODE_USER_NOT_FOUND,
+} from "../config/constants";
 import { Agent } from "https";
 import * as fs from "fs";
 import { RedPayConfigProvider } from "../provider";
@@ -140,7 +144,16 @@ export class RedPayClient {
    * @returns Una promesa con la respuesta deserializada o un objeto vacío en caso de error.
    */
   public async get<T>(path: string, params?: object): Promise<T> {
-    return await this.request<T>("get", path, params);
+    try {
+      return await this.request<T>("get", path, params);
+    } catch (error) {
+      const errorResponse = error as IError;
+
+      if (errorResponse?.data?.status_code === STATUS_CODE_USER_NOT_FOUND) {
+        return {} as T;
+      }
+      throw new Error(`${error}`);
+    }
   }
 
   /**
@@ -152,7 +165,9 @@ export class RedPayClient {
   public async getOrFail<T>(path: string, params?: object): Promise<T> {
     const response = await this.request<T>("get", path, params);
 
-    if (!response) { throw new UserNotFoundError(); }
+    if (!response) {
+      throw new UserNotFoundError();
+    }
 
     return response;
   }
