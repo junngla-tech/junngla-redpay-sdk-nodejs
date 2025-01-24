@@ -19,3 +19,5 @@ export type WebhookPreAuthorization = {
   timestamp: string;
   signature: string;
 };
+
+export type PreAuthorizationEvent = WebhookPreAuthorization

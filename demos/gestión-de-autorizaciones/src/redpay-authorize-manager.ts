@@ -3,6 +3,7 @@ import {
   Order,
   RedPayAuthorizationManager as _RedPayAuthorizationManager,
   WebhookPreAuthorization,
+  PreAuthorizationEvent,
 } from "redpay-sdk-nodejs";
 import * as path from "path";
 import { FileUtils } from "./utils/file";
@@ -60,12 +61,16 @@ export class RedPayAuthorizationManager extends _RedPayAuthorizationManager {
   /**
    * Maneja un evento informativo del webhook.
    *
-   * @param {WebhookPreAuthorization} webhook - Payload del webhook informativo.
+   * @param {PreAuthorizationEvent} preAuthorizationEvent - El payload del evento informativo.
    * @returns {Promise<void>} Una promesa que se resuelve cuando el evento informativo se procesa.
    */
-  // TODO: Crear alias de tipo de PreAuthorizationEvent , y la propiedad se llama event: PreAuthorizationEvent
-  async onInfoEvent(webhook: WebhookPreAuthorization): Promise<void> {
-    console.log("Evento informativo recibido", JSON.stringify(webhook));
+  async onInfoEvent(preAuthorizationEvent: PreAuthorizationEvent): Promise<void> {
+    await FileUtils.writeFile(
+      this.dirPath,
+      "onError",
+      preAuthorizationEvent.operations.authorization_uuid,
+      preAuthorizationEvent
+    );
   }
 
   /**

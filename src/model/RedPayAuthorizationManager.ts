@@ -284,9 +284,9 @@ export abstract class RedPayAuthorizationManager {
    * Maneja eventos informativos del webhook. Este método debe ser implementado por las subclases.
    *
    * @abstract
-   * @param {WebhookPreAuthorization} webhook - El payload del webhook.
+   * @param {PreAuthorizationEvent} preAuthorizationEvent - El payload del evento informativo.
    */
-  abstract onInfoEvent(webhook: WebhookPreAuthorization): Promise<void>;
+  abstract onInfoEvent(preAuthorizationEvent: WebhookPreAuthorization): Promise<void>;
 
   /**
    * Evento abstracto para manejar el éxito del procesamiento de una autorización de orden.
