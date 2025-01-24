@@ -1,6 +1,6 @@
 {
   "name": "redpay-sdk-nodejs",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "SDK NodeJS para integración con el servicio de Token de pago interoperable de RedPay",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
