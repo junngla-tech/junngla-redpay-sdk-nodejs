@@ -2,7 +2,12 @@
   "compilerOptions": {
     "outDir": "./dist",
     "strict": true,
-    "declaration": true
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "esModuleInterop": true, 
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
   },
   "include": ["src"],
   "exclude": ["node_modules", "**/__tests__/*"]
